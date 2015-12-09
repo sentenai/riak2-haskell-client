@@ -99,6 +99,7 @@ get bucket key r = Get.GetRequest { Get.bucket = escape bucket
                                   , Get.timeout = Nothing
                                   , Get.sloppy_quorum = Nothing
                                   , Get.n_val = Nothing
+                                  , Get.type' = Nothing
                                   }
 {-# INLINE get #-}
 
@@ -134,7 +135,11 @@ getByIndex bucket q =
                          , Index.stream = Nothing
                          , Index.max_results = Nothing
                          , Index.continuation = Nothing
-                         , Index.timeout = Nothing }
+                         , Index.timeout = Nothing
+                         , Index.type' = Nothing
+                         , Index.term_regex = Nothing
+                         , Index.pagination_sort = Nothing
+                         }
 
 -- | Create a put request.  The bucket and key names are URL-escaped.
 -- Any 'Link' values inside the 'Content' are assumed to have been
@@ -144,7 +149,7 @@ put :: Bucket -> Key -> Maybe VClock -> Content -> W -> DW -> Bool
 put bucket key mvclock cont mw mdw returnBody =
     Put.PutRequest (escape bucket) (Just $ escape key) (fromVClock <$> mvclock)
                    cont (fromQuorum mw) (fromQuorum mdw) (Just returnBody)
-                   Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+                   Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 {-# INLINE put #-}
 
 -- | Create a link.  The bucket and key names are URL-escaped.
@@ -156,27 +161,27 @@ link bucket key = Link.Link (Just (escape bucket)) (Just (escape key)) . Just
 delete :: Bucket -> Key -> RW -> Del.DeleteRequest
 delete bucket key rw = Del.DeleteRequest (escape bucket) (escape key)
                                          (fromQuorum rw) Nothing Nothing Nothing
-                                         Nothing Nothing Nothing Nothing Nothing Nothing
+                                         Nothing Nothing Nothing Nothing Nothing Nothing Nothing
 {-# INLINE delete #-}
 
 -- | Create a list-buckets request.
 listBuckets :: ListBucketsRequest
-listBuckets = ListBucketsRequest Nothing Nothing
+listBuckets = ListBucketsRequest Nothing Nothing Nothing
 {-# INLINE listBuckets #-}
 
 -- | Create a list-keys request.  The bucket name is URL-escaped.
 listKeys :: Bucket -> Keys.ListKeysRequest
-listKeys b = Keys.ListKeysRequest (escape b) Nothing
+listKeys b = Keys.ListKeysRequest (escape b) Nothing Nothing
 {-# INLINE listKeys #-}
 
 -- | Create a get-bucket request.  The bucket name is URL-escaped.
 getBucket :: Bucket -> GetBucket.GetBucketRequest
-getBucket = GetBucket.GetBucketRequest . escape
+getBucket b = GetBucket.GetBucketRequest (escape b) Nothing
 {-# INLINE getBucket #-}
 
 -- | Create a set-bucket request.  The bucket name is URL-escaped.
 setBucket :: Bucket -> BucketProps -> SetBucket.SetBucketRequest
-setBucket = SetBucket.SetBucketRequest . escape
+setBucket b ps = SetBucket.SetBucketRequest (escape b) ps Nothing
 {-# INLINE setBucket #-}
 
 -- | Create a map-reduce request.
