@@ -70,10 +70,18 @@ import qualified Network.Riak.Protocol.ListKeysRequest as Keys
 import qualified Network.Riak.Protocol.PutRequest as Put
 import qualified Network.Riak.Protocol.SetBucketRequest as SetBucket
 
+import qualified Network.Riak.Protocol.DtUpdateRequest as DtUpdate
+
 -- | Create a ping request.
 ping :: PingRequest
 ping = PingRequest
 {-# INLINE ping #-}
+{-
+-- | Create a dtUpdate request.
+dtUpdate :: DtUpdate.DtUpdateRequest
+dtUpdate = DtUpdate.DtUpdateRequest
+{-# INLINE dtUpdate #-}
+-}
 
 -- | Create a client-ID request.
 getClientID :: GetClientIDRequest

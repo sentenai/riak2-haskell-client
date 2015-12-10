@@ -187,6 +187,8 @@ data MessageTag = ErrorResponse
                 | MapReduceResponse
                 | IndexRequest
                 | IndexResponse
+                | DtUpdateRequest
+                | DtUpdateResponse
                   deriving (Eq, Show, Enum, Typeable)
 
 -- | Messages are tagged.

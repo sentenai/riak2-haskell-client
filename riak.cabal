@@ -1,5 +1,5 @@
 name:                riak
-version:             0.9.1.1
+version:             2.1
 synopsis:            A Haskell client for the Riak decentralized data store
 description:
   A Haskell client library for the Riak decentralized data
@@ -67,6 +67,7 @@ library
     Network.Riak.Basic
     Network.Riak.Cluster
     Network.Riak.Connection
+    Network.Riak.Connection.Internal
     Network.Riak.Connection.Pool
     Network.Riak.Content
     Network.Riak.Debug
@@ -80,13 +81,12 @@ library
     Network.Riak.Types
     Network.Riak.Value
     Network.Riak.Value.Resolvable
+    Network.Riak.Types.Internal
 
   other-modules:
-    Network.Riak.Connection.Internal
     Network.Riak.Connection.NoPush
     Network.Riak.Resolvable.Internal
     Network.Riak.Tag
-    Network.Riak.Types.Internal
 
   build-depends:
                 aeson                         >= 0.8 && < 0.11,
@@ -107,7 +107,7 @@ library
                 pureMD5,
                 random,
                 random-shuffle                >= 0.0.4 && < 0.1,
-                riak-protobuf                 == 0.20.*,
+                riak-protobuf                 == 0.21.*,
                 text                          == 1.2.*,
                 time                          >= 1.4.2 && < 1.6,
                 vector                        >= 0.10.12.3 && < 0.12

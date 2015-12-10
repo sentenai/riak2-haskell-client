@@ -41,6 +41,8 @@ import Network.Riak.Protocol.PutResponse
 import Network.Riak.Protocol.ServerInfo
 import Network.Riak.Protocol.SetBucketRequest
 import Network.Riak.Protocol.SetClientIDRequest
+import Network.Riak.Protocol.DtUpdateRequest
+import Network.Riak.Protocol.DtUpdateResponse
 import Network.Riak.Types.Internal as Types
 import Text.ProtocolBuffers.Get (Get, getWord8)
 
@@ -220,9 +222,24 @@ instance Tagged MapReduce where
     messageTag _ = Types.MapReduceResponse
     {-# INLINE messageTag #-}
 
+
 instance Response MapReduce
 
 instance Exchange MapReduceRequest MapReduce
+
+instance Tagged DtUpdateRequest where
+    messageTag _ = Types.DtUpdateRequest
+    {-# INLINE messageTag #-}
+
+instance Tagged DtUpdateResponse where
+    messageTag _ = Types.DtUpdateResponse
+    {-# INLINE messageTag #-}
+
+instance Request DtUpdateRequest where
+    expectedResponse _ = Types.DtUpdateResponse
+    {-# INLINE expectedResponse #-}
+
+instance Response DtUpdateResponse
 
 putTag :: MessageTag -> Put
 putTag = putWord8 . fromIntegral . fromEnum
