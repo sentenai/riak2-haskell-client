@@ -54,5 +54,23 @@ t_put_get (QCBucket b) (QCKey k) v =
             return (p,r)
 
 
+put_delete_get :: QCBucket -> QCKey -> L.ByteString -> Property
+put_delete_get (QCBucket b) (QCKey k) v
+    = monadicIO $ do
+        r <- run act
+        assert $ isNothing r
+    where
+      act = withConnection pool $ \c -> do
+              B.put c b k Nothing (binary v) Default Default
+              B.delete c b k Default
+              B.get c b k Default
+
+
 tests :: [TestTree]
-tests = [ testProperty "t_put_get" t_put_get ]
+tests = [
+ testProperty "t_put_get" t_put_get,
+ testProperty "put_delete_get" put_delete_get
+ ]
+
+
+
