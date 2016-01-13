@@ -4,7 +4,7 @@
 module Main where
 
 import           Control.Exception            (finally)
-import           Control.Monad                (forM_)
+import           Control.Monad
 import           Data.IORef
 import qualified Data.Map                     as M
 import           Data.Text                    (Text)
@@ -27,8 +27,9 @@ main = defaultMain tests `finally` cleanup
                 forM_ bks $ \(b,k) -> B.delete c b k Default
 
 tests :: TestTree
-tests = testGroup "Tests" [properties, integrationalTests]
-
+tests = testGroup "Tests" [properties,
+                           integrationalTests,
+                           ping'o'death]
 properties :: TestTree
 properties = testGroup "Properties" Properties.tests
 
@@ -57,3 +58,10 @@ testIndexedPutGet = testCase "testIndexedPutGet" $ do
           Default Default
       Riak.getByIndex c b (IndexQueryExactInt "someindex" 135)
     assertEqual "" ["test"] keys
+
+ping'o'death :: TestTree
+ping'o'death = testCase "ping'o'death" $ replicateM_ 23 ping
+    where ping = do
+            c <- Riak.connect Riak.defaultClient
+            replicateM_ 1024 $ Riak.ping c
+
