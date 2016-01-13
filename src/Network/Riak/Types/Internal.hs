@@ -25,6 +25,7 @@ module Network.Riak.Types.Internal
     , unexError
     -- * Data types
     , Bucket
+    , BucketType
     , Key
     , Index
     , IndexQuery(..)
@@ -128,6 +129,10 @@ instance Show Connection where
 -- with a set of common properties for its contents (the number of
 -- replicas, for instance).
 type Bucket = ByteString
+
+-- | Bucket types is a riak >= 2.0 feature allowing groups of buckets
+-- to share configuration details
+type BucketType = ByteString
 
 -- | Keys are unique object identifiers in Riak and are scoped within
 -- buckets.

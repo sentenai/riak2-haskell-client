@@ -18,6 +18,7 @@ module Network.Riak.Types
     -- * Errors
     , RiakException(excModule, excFunction, excMessage)
     -- * Data types
+    , BucketType
     , Bucket
     , Key
     , Tag
