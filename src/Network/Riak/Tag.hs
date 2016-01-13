@@ -18,6 +18,10 @@ module Network.Riak.Tag
     ) where
 
 import Data.Binary.Put (Put, putWord8)
+import Data.Word (Word8)
+import qualified Data.HashMap.Strict as HM
+import Control.Applicative
+import Data.Tuple (swap)
 import Network.Riak.Protocol.DeleteRequest
 import Network.Riak.Protocol.ErrorResponse
 import Network.Riak.Protocol.GetBucketRequest
@@ -242,16 +246,84 @@ instance Request DtUpdateRequest where
 instance Response DtUpdateResponse
 
 putTag :: MessageTag -> Put
-putTag = putWord8 . fromIntegral . fromEnum
+putTag m = putWord8 $ message2code HM.! m
 {-# INLINE putTag #-}
 
 getTag :: Get MessageTag
 getTag = do
   n <- getWord8
-  if n > 26
-    then moduleError "getTag" $ "invalid riak message code: " ++ show n
-    else return .  toEnum . fromIntegral $ n
+  maybe (err n) pure $ HM.lookup n code2message
+      where
+        err n = moduleError "getTag" $ "invalid riak message code: " ++ show n
 {-# INLINE getTag #-}
 
 moduleError :: String -> String -> a
 moduleError = netError "Network.Riak.Tag"
+
+
+code2message :: HM.HashMap Word8 MessageTag
+code2message = HM.fromList messageCodes
+
+message2code :: HM.HashMap MessageTag Word8
+message2code = HM.fromList . map swap $ messageCodes
+
+messageCodes :: [(Word8, MessageTag)]
+messageCodes = [
+ -- riak-2.1.3/deps/riak_pb/src/riak_pb_messages.csv
+ (0, Types.ErrorResponse),
+ (1, Types.PingRequest),
+ (2, Types.PingResponse),
+ (3, Types.GetClientIDResponse),
+ (4, Types.GetClientIDResponse),
+ (5, Types.SetClientIDRequest),
+ (6, Types.SetClientIDResponse),
+ (7, Types.GetServerInfoRequest),
+ (8, Types.GetServerInfoResponse),
+ (9, Types.GetRequest),
+ (10, Types.GetResponse),
+ (11, Types.PutRequest),
+ (12, Types.PutResponse),
+ (13, Types.DeleteRequest),
+ (14, Types.DeleteResponse),
+ (15, Types.ListBucketsRequest),
+ (16, Types.ListBucketsResponse),
+ (17, Types.ListKeysRequest),
+ (18, Types.ListKeysResponse),
+ (19, Types.GetBucketRequest),
+ (20, Types.GetBucketResponse),
+ (21, Types.SetBucketRequest),
+ (22, Types.SetBucketResponse),
+ (23, Types.MapReduceRequest),
+ (24, Types.MapReduceResponse),
+ (25, Types.IndexRequest),
+ (26, Types.IndexResponse),
+ -- (27,SearchQueryReq),
+ -- (28,SearchQueryResp),
+ -- (29,ResetBucketRequest),
+ -- (30,ResetBucketResp),
+ (31, Types.GetBucketTypeRequest),
+ -- (32,SetBucketTypeReq),
+ -- (33,GetBucketKeyPreflistReq),
+ -- (34,GetBucketKeyPreflistResp),
+ -- (40,CSBucketReq),
+ -- (41,CSBucketResp),
+ -- (50,CounterUpdateReq),
+ -- (51,CounterUpdateResp),
+ -- (52,CounterGetReq),
+ -- (53,CounterGetResp),
+ -- (54,YokozunaIndexGetReq),
+ -- (55,YokozunaIndexGetResp),
+ -- (56,YokozunaIndexPutReq),
+ -- (57,YokozunaIndexDeleteReq),
+ -- (58,YokozunaSchemaGetReq),
+ -- (59,YokozunaSchemaGetResp),
+ -- (60,YokozunaSchemaPutReq),
+ -- (80,DtFetchReq),
+ -- (81,DtFetchResp),
+ (82, Types.DtUpdateRequest),
+ (83, Types.DtUpdateResponse)
+ -- (253,RpbAuthReq),
+ -- (254,RpbAuthResp),
+ -- (255,RpbStartTls)
+ ]
+

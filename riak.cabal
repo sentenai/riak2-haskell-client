@@ -98,6 +98,7 @@ library
                 containers,
                 enclosed-exceptions           >= 1.0.1.1 && <= 1.1,
                 exceptions                    >= 0.8.0.2 && <= 0.9,
+                hashable                      >= 1.2.3,
                 transformers                  >= 0.3 && < 0.5,
                 mersenne-random-pure64        >= 0.2.0.4 && < 0.3,
                 monad-control                 >= 1.0.0.4 && < 1.1,
@@ -110,7 +111,8 @@ library
                 riak-protobuf                 == 0.21.*,
                 text                          == 1.2.*,
                 time                          >= 1.4.2 && < 1.6,
-                vector                        >= 0.10.12.3 && < 0.12
+                vector                        >= 0.10.12.3 && < 0.12,
+                unordered-containers          >= 0.2.5
 
   if flag(debug)
     cpp-options: -DASSERTS -DDEBUG

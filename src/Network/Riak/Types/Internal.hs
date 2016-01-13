@@ -1,5 +1,5 @@
 {-# LANGUAGE DeriveDataTypeable, FunctionalDependencies, MultiParamTypeClasses,
-    RecordWildCards #-}
+    RecordWildCards, DeriveGeneric #-}
 
 -- |
 -- Module:      Network.Riak.Types.Internal
@@ -54,7 +54,9 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Digest.Pure.MD5 (md5)
 import Data.IORef (IORef)
 import Data.Typeable (Typeable)
+import Data.Hashable (Hashable)
 import Data.Word (Word32)
+import GHC.Generics (Generic)
 import Network.Socket (HostName, ServiceName, Socket)
 import Text.ProtocolBuffers (ReflectDescriptor, Wire)
 
@@ -164,7 +166,7 @@ data Job = JSON ByteString
          | Erlang ByteString
            deriving (Eq, Show, Typeable)
 
--- | An identifier for an inbound or outbound message.
+-- | List of (known to us) inbound or outbound message identifiers.
 data MessageTag = ErrorResponse
                 | PingRequest
                 | PingResponse
@@ -194,7 +196,9 @@ data MessageTag = ErrorResponse
                 | IndexResponse
                 | DtUpdateRequest
                 | DtUpdateResponse
-                  deriving (Eq, Show, Enum, Typeable)
+                  deriving (Eq, Show, Generic)
+
+instance Hashable MessageTag
 
 -- | Messages are tagged.
 class Tagged msg where
