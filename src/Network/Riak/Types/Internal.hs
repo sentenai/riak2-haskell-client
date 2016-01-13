@@ -216,7 +216,7 @@ class (Tagged msg, ReflectDescriptor msg, Show msg, Wire msg) => Request msg
 class (Tagged msg, ReflectDescriptor msg, Show msg, Wire msg) => Response msg
 
 class (Request req, Response resp) => Exchange req resp
-    | req -> resp, resp -> req
+    | req -> resp
 
 instance (Tagged a, Tagged b) => Tagged (Either a b) where
     messageTag (Left l)  = messageTag l
