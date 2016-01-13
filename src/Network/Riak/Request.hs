@@ -174,23 +174,23 @@ delete bucket key rw = Del.DeleteRequest (escape bucket) (escape key)
 {-# INLINE delete #-}
 
 -- | Create a list-buckets request.
-listBuckets :: ListBucketsRequest
-listBuckets = ListBucketsRequest Nothing Nothing Nothing
+listBuckets :: Maybe BucketType -> ListBucketsRequest
+listBuckets = ListBucketsRequest Nothing Nothing
 {-# INLINE listBuckets #-}
 
--- | Create a list-keys request.  The bucket name is URL-escaped.
-listKeys :: Bucket -> Keys.ListKeysRequest
-listKeys b = Keys.ListKeysRequest (escape b) Nothing Nothing
+-- | Create a list-keys request.  The bucket type and name are URL-escaped.
+listKeys :: Maybe BucketType -> Bucket -> Keys.ListKeysRequest
+listKeys t b = Keys.ListKeysRequest (escape b) Nothing (escape <$> t)
 {-# INLINE listKeys #-}
 
--- | Create a get-bucket request.  The bucket name is URL-escaped.
-getBucket :: Bucket -> GetBucket.GetBucketRequest
-getBucket b = GetBucket.GetBucketRequest (escape b) Nothing
+-- | Create a get-bucket request.  The bucket type and name are URL-escaped.
+getBucket :: Maybe BucketType -> Bucket -> GetBucket.GetBucketRequest
+getBucket t b = GetBucket.GetBucketRequest (escape b) (escape <$> t)
 {-# INLINE getBucket #-}
 
--- | Create a set-bucket request.  The bucket name is URL-escaped.
-setBucket :: Bucket -> BucketProps -> SetBucket.SetBucketRequest
-setBucket b ps = SetBucket.SetBucketRequest (escape b) ps Nothing
+-- | Create a set-bucket request.  The bucket type and name are URL-escaped.
+setBucket :: Maybe BucketType -> Bucket -> BucketProps -> SetBucket.SetBucketRequest
+setBucket t b ps = SetBucket.SetBucketRequest (escape b) ps (escape <$> t)
 {-# INLINE setBucket #-}
 
 -- | Create a get-bucket-type request.  The bucket type is URL-escaped.
