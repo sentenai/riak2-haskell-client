@@ -41,6 +41,7 @@ module Network.Riak.Request
     , getBucket
     , SetBucket.SetBucketRequest
     , setBucket
+    , getBucketType
     -- * Map/reduce
     , MapReduceRequest
     , mapReduce
@@ -69,7 +70,7 @@ import qualified Network.Riak.Protocol.IndexRequest.IndexQueryType as IndexQuery
 import qualified Network.Riak.Protocol.ListKeysRequest as Keys
 import qualified Network.Riak.Protocol.PutRequest as Put
 import qualified Network.Riak.Protocol.SetBucketRequest as SetBucket
-
+import qualified Network.Riak.Protocol.GetBucketTypeRequest as GetBucketType
 import qualified Network.Riak.Protocol.DtUpdateRequest as DtUpdate
 
 -- | Create a ping request.
@@ -191,6 +192,10 @@ getBucket b = GetBucket.GetBucketRequest (escape b) Nothing
 setBucket :: Bucket -> BucketProps -> SetBucket.SetBucketRequest
 setBucket b ps = SetBucket.SetBucketRequest (escape b) ps Nothing
 {-# INLINE setBucket #-}
+
+-- | Create a get-bucket-type request.  The bucket type is URL-escaped.
+getBucketType :: BucketType -> GetBucketType.GetBucketTypeRequest
+getBucketType t = GetBucketType.GetBucketTypeRequest (escape t)
 
 -- | Create a map-reduce request.
 mapReduce :: Job -> MapReduceRequest

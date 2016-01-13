@@ -25,6 +25,7 @@ import Data.Tuple (swap)
 import Network.Riak.Protocol.DeleteRequest
 import Network.Riak.Protocol.ErrorResponse
 import Network.Riak.Protocol.GetBucketRequest
+import Network.Riak.Protocol.GetBucketTypeRequest
 import Network.Riak.Protocol.GetBucketResponse
 import Network.Riak.Protocol.GetClientIDRequest
 import Network.Riak.Protocol.GetClientIDResponse
@@ -213,6 +214,14 @@ instance Tagged SetBucketRequest where
 instance Request SetBucketRequest where
     expectedResponse _ = Types.SetBucketResponse
     {-# INLINE expectedResponse #-}
+
+instance Request GetBucketTypeRequest where
+    expectedResponse _ = Types.GetBucketResponse
+
+instance Tagged GetBucketTypeRequest where
+    messageTag _ = Types.GetBucketTypeRequest
+
+instance Exchange GetBucketTypeRequest GetBucketResponse
 
 instance Tagged MapReduceRequest where
     messageTag _ = Types.MapReduceRequest

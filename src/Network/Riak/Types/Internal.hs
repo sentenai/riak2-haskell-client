@@ -190,6 +190,7 @@ data MessageTag = ErrorResponse
                 | GetBucketResponse
                 | SetBucketRequest
                 | SetBucketResponse
+                | GetBucketTypeRequest
                 | MapReduceRequest
                 | MapReduceResponse
                 | IndexRequest

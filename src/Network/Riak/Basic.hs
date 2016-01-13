@@ -39,6 +39,7 @@ module Network.Riak.Basic
     , foldKeys
     , getBucket
     , setBucket
+    , getBucketType
     -- * Map/reduce
     , mapReduce
     ) where
@@ -139,6 +140,10 @@ getBucket conn bucket = Resp.getBucket <$> exchange conn (Req.getBucket bucket)
 -- | Store new properties for a bucket.
 setBucket :: Connection -> T.Bucket -> BucketProps -> IO ()
 setBucket conn bucket props = exchange_ conn $ Req.setBucket bucket props
+
+-- | Gets the bucket properties associated with a bucket type.
+getBucketType :: Connection -> T.BucketType -> IO BucketProps
+getBucketType conn btype = Resp.getBucket <$> exchange conn (Req.getBucketType btype)
 
 -- | Run a 'MapReduce' job.  Its result is consumed via a strict left
 -- fold.
