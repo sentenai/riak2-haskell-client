@@ -195,6 +195,8 @@ data MessageTag = ErrorResponse
                 | MapReduceResponse
                 | IndexRequest
                 | IndexResponse
+                | DtFetchRequest
+                | DtFetchResponse
                 | DtUpdateRequest
                 | DtUpdateResponse
                   deriving (Eq, Show, Generic)

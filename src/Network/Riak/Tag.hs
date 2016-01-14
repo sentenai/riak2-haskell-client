@@ -46,6 +46,8 @@ import Network.Riak.Protocol.PutResponse
 import Network.Riak.Protocol.ServerInfo
 import Network.Riak.Protocol.SetBucketRequest
 import Network.Riak.Protocol.SetClientIDRequest
+import Network.Riak.Protocol.DtFetchRequest
+import Network.Riak.Protocol.DtFetchResponse
 import Network.Riak.Protocol.DtUpdateRequest
 import Network.Riak.Protocol.DtUpdateResponse
 import Network.Riak.Types.Internal as Types
@@ -240,6 +242,22 @@ instance Response MapReduce
 
 instance Exchange MapReduceRequest MapReduce
 
+instance Tagged DtFetchRequest where
+    messageTag _ = Types.DtFetchRequest
+    {-# INLINE messageTag #-}
+
+instance Tagged DtFetchResponse where
+    messageTag _ = Types.DtFetchResponse
+    {-# INLINE messageTag #-}
+
+instance Request DtFetchRequest where
+    expectedResponse _ = Types.DtFetchResponse
+    {-# INLINE expectedResponse #-}
+
+instance Response DtFetchResponse
+
+instance Exchange DtFetchRequest DtFetchResponse
+
 instance Tagged DtUpdateRequest where
     messageTag _ = Types.DtUpdateRequest
     {-# INLINE messageTag #-}
@@ -253,6 +271,8 @@ instance Request DtUpdateRequest where
     {-# INLINE expectedResponse #-}
 
 instance Response DtUpdateResponse
+
+instance Exchange DtUpdateRequest DtUpdateResponse
 
 putTag :: MessageTag -> Put
 putTag m = putWord8 $ message2code HM.! m
@@ -327,8 +347,8 @@ messageCodes = [
  -- (58,YokozunaSchemaGetReq),
  -- (59,YokozunaSchemaGetResp),
  -- (60,YokozunaSchemaPutReq),
- -- (80,DtFetchReq),
- -- (81,DtFetchResp),
+ (80, Types.DtFetchRequest),
+ (81, Types.DtFetchResponse),
  (82, Types.DtUpdateRequest),
  (83, Types.DtUpdateResponse)
  -- (253,RpbAuthReq),

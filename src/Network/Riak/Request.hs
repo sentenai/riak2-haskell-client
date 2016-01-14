@@ -71,7 +71,6 @@ import qualified Network.Riak.Protocol.ListKeysRequest as Keys
 import qualified Network.Riak.Protocol.PutRequest as Put
 import qualified Network.Riak.Protocol.SetBucketRequest as SetBucket
 import qualified Network.Riak.Protocol.GetBucketTypeRequest as GetBucketType
-import qualified Network.Riak.Protocol.DtUpdateRequest as DtUpdate
 
 -- | Create a ping request.
 ping :: PingRequest
