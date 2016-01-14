@@ -1,21 +1,33 @@
 language: c
 sudo: required
+dist: trusty
 
-services:
-  - riak
+# services:
+#   - riak
 
 before_install:
   # stack
   - mkdir -p ~/.local/bin
   - export PATH=~/.local/bin:$PATH
   - curl -L https://github.com/commercialhaskell/stack/releases/download/v0.1.6.0/stack-0.1.6.0-linux-x86_64.tar.gz | tar xz -C /tmp; mv /tmp/stack-0.1.6.0-linux-x86_64/stack ~/.local/bin
-  - ulimit -n 2048
-  - sudo riak-admin bucket-type create maps '{"props":{"datatype":"map"}}'
-  - sudo riak-admin bucket-type create sets '{"props":{"datatype":"set"}}'
-  - sudo riak-admin bucket-type create counters '{"props":{"datatype":"counter"}}'
-  - sudo riak-admin bucket-type activate maps
-  - sudo riak-admin bucket-type activate sets
-  - sudo riak-admin bucket-type activate counters
+  - ulimit -n 4096
+  # riak
+  - sudo apt-get -y install build-essential libc6-dev-i386 git
+  - sudo apt-get -y install erlang-nox erlang-dev erlang-reltool
+  - wget http://s3.amazonaws.com/downloads.basho.com/riak/2.1/2.1.3/riak-2.1.3.tar.gz
+  - tar zxvf riak-2.1.3.tar.gz
+  - cd riak-2.1.3
+  - make rel
+  - ./rel/riak/bin/riak start
+  - ./rel/riak/bin/riak ping
+  - sleep 7
+  - ./rel/riak/bin/riak-admin bucket-type create maps '{"props":{"datatype":"map"}}'
+  - ./rel/riak/bin/riak-admin bucket-type create sets '{"props":{"datatype":"set"}}'
+  - ./rel/riak/bin/riak-admin bucket-type create counters '{"props":{"datatype":"counter"}}'
+  - ./rel/riak/bin/riak-admin bucket-type activate maps
+  - ./rel/riak/bin/riak-admin bucket-type activate sets
+  - ./rel/riak/bin/riak-admin bucket-type activate counters
+  - cd -
 
 matrix:
   include:
