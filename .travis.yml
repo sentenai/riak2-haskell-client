@@ -1,5 +1,5 @@
 language: c
-sudo: false
+sudo: required
 
 services:
   - riak
@@ -10,6 +10,12 @@ before_install:
   - export PATH=~/.local/bin:$PATH
   - curl -L https://github.com/commercialhaskell/stack/releases/download/v0.1.6.0/stack-0.1.6.0-linux-x86_64.tar.gz | tar xz -C /tmp; mv /tmp/stack-0.1.6.0-linux-x86_64/stack ~/.local/bin
   - ulimit -n 2048
+  - sudo riak-admin bucket-type create maps '{"props":{"datatype":"map"}}'
+  - sudo riak-admin bucket-type create sets '{"props":{"datatype":"set"}}'
+  - sudo riak-admin bucket-type create counters '{"props":{"datatype":"counter"}}'
+  - sudo riak-admin bucket-type activate maps
+  - sudo riak-admin bucket-type activate sets
+  - sudo riak-admin bucket-type activate counters
 
 matrix:
   include:
