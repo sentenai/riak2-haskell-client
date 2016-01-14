@@ -114,7 +114,6 @@ connect cli0 = do
     Socket.connect sock (addrAddress ai)
     buf <- newIORef L.empty
     let conn = Connection sock client buf
-    addFinalizer conn $ sClose sock  -- Data.Pool doesn't guarantee our disconnect gets called...
     setClientID conn clientID
     return conn
 
