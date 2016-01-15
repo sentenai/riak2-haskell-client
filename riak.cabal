@@ -74,6 +74,10 @@ library
     Network.Riak.Connection.Pool
     Network.Riak.Content
     Network.Riak.CRDT
+    Network.Riak.CRDT.Ops
+    Network.Riak.CRDT.Request
+    Network.Riak.CRDT.Response
+    Network.Riak.CRDT.Riak
     Network.Riak.CRDT.Types
     Network.Riak.Debug
     Network.Riak.Escape

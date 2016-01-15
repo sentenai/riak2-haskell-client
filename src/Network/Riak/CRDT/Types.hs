@@ -40,7 +40,7 @@ data SetOp = SetOp
 -- | CRDT Counter hold a integer 'Count'
 newtype Counter = Counter Count deriving (Eq,Show)
 type Count = Int64
-data CounterOp = Inc Count
+data CounterOp = Inc Count deriving (Show)
 
 instance Monoid CounterOp where
     mempty = Inc 0

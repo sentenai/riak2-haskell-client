@@ -10,6 +10,7 @@ import qualified Data.Map                     as M
 import           Data.Text                    (Text)
 import qualified Network.Riak                 as Riak
 import qualified Network.Riak.Basic           as B
+import qualified Network.Riak.CRDT            as C
 import qualified Network.Riak.Cluster         as Riak
 import           Network.Riak.Connection.Pool (withConnection)
 import qualified Network.Riak.JSON            as J
@@ -29,7 +30,9 @@ main = defaultMain tests `finally` cleanup
 tests :: TestTree
 tests = testGroup "Tests" [properties,
                            integrationalTests,
-                           ping'o'death]
+                           ping'o'death,
+                           counter
+                          ]
 properties :: TestTree
 properties = testGroup "Properties" Properties.tests
 
@@ -65,3 +68,13 @@ ping'o'death = testCase "ping'o'death" $ replicateM_ 23 ping
             c <- Riak.connect Riak.defaultClient
             replicateM_ 1024 $ Riak.ping c
 
+
+counter :: TestTree
+counter = testCase "increment" $ do
+              conn <- Riak.connect Riak.defaultClient
+              Just (C.DTCounter (C.Counter a)) <- act conn
+              Just (C.DTCounter (C.Counter b)) <- act conn
+              assertEqual "inc by 1" 1 (b-a)
+    where
+      act c = do C.counterUpdate c "counters" "xxx" "yyy" [C.CounterInc 1]
+                 C.get c "counters" "xxx" "yyy"
