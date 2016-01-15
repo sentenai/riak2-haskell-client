@@ -70,6 +70,8 @@ library
     Network.Riak.Connection.Internal
     Network.Riak.Connection.Pool
     Network.Riak.Content
+    Network.Riak.CRDT
+    Network.Riak.CRDT.Types
     Network.Riak.Debug
     Network.Riak.Escape
     Network.Riak.Functions
