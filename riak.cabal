@@ -26,7 +26,10 @@ description:
   [Network.Riak.Basic] manual storage, manual conflict resolution.
   This is the most demanding module to work with, as you must encode
   and decode data yourself, and handle all conflict resolution
-  yourself.
+  yourself
+  .
+  [Network.Riak.CRDT] CRDT operations.
+
 
 homepage:            http://github.com/markhibberd/riak-haskell-client
 license:             OtherLicense
@@ -70,6 +73,8 @@ library
     Network.Riak.Connection.Internal
     Network.Riak.Connection.Pool
     Network.Riak.Content
+    Network.Riak.CRDT
+    Network.Riak.CRDT.Types
     Network.Riak.Debug
     Network.Riak.Escape
     Network.Riak.Functions
