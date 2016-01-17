@@ -121,7 +121,8 @@ library
                 text                          == 1.2.*,
                 time                          >= 1.4.2 && < 1.6,
                 vector                        >= 0.10.12.3 && < 0.12,
-                unordered-containers          >= 0.2.5
+                unordered-containers          >= 0.2.5,
+                semigroups
 
   if flag(debug)
     cpp-options: -DASSERTS -DDEBUG

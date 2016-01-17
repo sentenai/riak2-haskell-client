@@ -22,6 +22,11 @@ setUpdate :: Connection -> BucketType -> Bucket -> Key
 setUpdate conn t b k ops = Conn.exchange_ conn (Req.setUpdate ops t b k)
 
 
+mapUpdate :: Connection -> BucketType -> Bucket -> Key
+          -> [CRDT.MapOp] -> IO ()
+mapUpdate conn t b k ops = Conn.exchange_ conn (Req.mapUpdate ops t b k)
+
+
 get :: Connection -> BucketType -> Bucket -> Key
     -> IO (Maybe CRDT.DataType)
 get conn t b k = Resp.get <$> Conn.exchange conn (Req.get t b k)
