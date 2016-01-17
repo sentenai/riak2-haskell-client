@@ -1,5 +1,5 @@
 module Network.Riak.CRDT.Request
-    (get, counterUpdate) where
+    (get, counterUpdate, setUpdate) where
 
 import qualified Network.Riak.Protocol.DtFetchRequest as DtFetch
 import qualified Network.Riak.Protocol.DtUpdateRequest as DtUpdate
@@ -13,6 +13,10 @@ counterUpdate :: [CRDT.CounterOp]
               -> DtUpdate.DtUpdateRequest
 counterUpdate ops = update (counterUpdateOp ops)
 
+setUpdate :: [CRDT.SetOp]
+          -> BucketType -> Bucket -> Key
+          -> DtUpdate.DtUpdateRequest
+setUpdate ops = update (setUpdateOp ops)
 
 update :: DtOp.DtOp -> BucketType -> Bucket -> Key -> DtUpdate.DtUpdateRequest
 update op t b k = DtUpdate.DtUpdateRequest {

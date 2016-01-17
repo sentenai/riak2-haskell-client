@@ -8,7 +8,9 @@ module Network.Riak.CRDT.Types where
 
 import qualified Data.Map as M
 import qualified Data.Set as S
-import Data.ByteString (ByteString)
+import qualified Data.Sequence as Seq
+import Data.Foldable
+import Data.ByteString.Lazy (ByteString)
 import Data.Int (Int64)
 import Data.Monoid
 
@@ -35,7 +37,10 @@ data DataType = DTCounter Counter
 
 -- | CRDT Set is a Data.Set
 newtype Set = Set (S.Set ByteString) deriving (Eq,Show)
-data SetOp = SetOp
+data SetOp = SetAdd ByteString | SetRemove ByteString deriving Show
+
+setFromSeq :: Seq.Seq ByteString -> Set
+setFromSeq = Set . S.fromList . toList
 
 -- | CRDT Counter hold a integer 'Count'
 newtype Counter = Counter Count deriving (Eq,Show)

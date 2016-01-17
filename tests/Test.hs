@@ -7,6 +7,7 @@ import           Control.Exception            (finally)
 import           Control.Monad
 import           Data.IORef
 import qualified Data.Map                     as M
+import qualified Data.Set                     as S
 import           Data.Text                    (Text)
 import qualified Network.Riak                 as Riak
 import qualified Network.Riak.Basic           as B
@@ -31,7 +32,8 @@ tests :: TestTree
 tests = testGroup "Tests" [properties,
                            integrationalTests,
                            ping'o'death,
-                           counter
+                           counter,
+                           set
                           ]
 properties :: TestTree
 properties = testGroup "Properties" Properties.tests
@@ -78,3 +80,16 @@ counter = testCase "increment" $ do
     where
       act c = do C.counterUpdate c "counters" "xxx" "yyy" [C.CounterInc 1]
                  C.get c "counters" "xxx" "yyy"
+
+set :: TestTree
+set = testCase "increment" $ do
+        conn <- Riak.connect Riak.defaultClient
+        C.setUpdate conn btype buck key [C.SetRemove val]
+        C.setUpdate conn btype buck key [C.SetAdd val]
+        Just (C.DTSet (C.Set r)) <- C.get conn btype buck key
+        assertBool "-foo +foo => contains foo" $ val `S.member` r
+    where
+      add c = do C.setUpdate c btype buck key [C.SetAdd val]
+                 C.get c btype buck key
+      (btype,buck,key,val) = ("sets","xxx","yyy","foo")
+
