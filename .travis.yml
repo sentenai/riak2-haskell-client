@@ -20,7 +20,7 @@ before_install:
   - make rel
   - ./rel/riak/bin/riak start
   - ./rel/riak/bin/riak ping
-  - sleep 7
+  - ./rel/riak/bin/riak-admin wait-for-service riak_kv
   - ./rel/riak/bin/riak-admin bucket-type create maps '{"props":{"datatype":"map"}}'
   - ./rel/riak/bin/riak-admin bucket-type create sets '{"props":{"datatype":"set"}}'
   - ./rel/riak/bin/riak-admin bucket-type create counters '{"props":{"datatype":"counter"}}'
