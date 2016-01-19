@@ -131,9 +131,9 @@ setFromSeq = Set . S.fromList . F.toList
 -- | CRDT Counter hold a integer 'Count'
 newtype Counter = Counter Count deriving (Eq,Show)
 type Count = Int64
-data CounterOp = Inc Count deriving (Show)
+data CounterOp = CounterInc Count deriving (Show)
 
 instance Monoid CounterOp where
-    mempty = Inc 0
-    Inc x `mappend` Inc y = Inc (x+y)
+    mempty = CounterInc 0
+    CounterInc x `mappend` CounterInc y = CounterInc (x+y)
 

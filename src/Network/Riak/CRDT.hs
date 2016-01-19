@@ -32,7 +32,7 @@ import Network.Riak.CRDT.Ops
 -- | Modify a counter by applying operations ops
 modifyCounter :: CounterOp -> Counter -> Counter
 modifyCounter ops (Counter c) = Counter (c+i)
-    where Inc i = ops
+    where CounterInc i = ops
 
 
 -- | Modify a set by applying operations ops

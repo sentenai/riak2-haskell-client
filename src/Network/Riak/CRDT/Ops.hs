@@ -30,7 +30,7 @@ counterUpdateOp ops = PB.DtOp { PB.counter_op = Just $ counterOpPB ops,
                               }
 
 counterOpPB ops = PB.CounterOp (Just i)
-    where Inc i = mconcat ops
+    where CounterInc i = mconcat ops
 
 
 data SetOpsComb = SetOpsComb { setAdds :: S.Set ByteString,
