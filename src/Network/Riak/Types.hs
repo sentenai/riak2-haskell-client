@@ -38,6 +38,7 @@ module Network.Riak.Types
     , Tagged(..)
     , IndexValue(..)
     , IndexQuery(..)
+    , SearchResult(..)
     ) where
 
 import Network.Riak.Types.Internal

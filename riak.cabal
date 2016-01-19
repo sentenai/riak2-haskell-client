@@ -87,6 +87,7 @@ library
     Network.Riak.Request
     Network.Riak.Resolvable
     Network.Riak.Response
+    Network.Riak.Search
     Network.Riak.Types
     Network.Riak.Value
     Network.Riak.Value.Resolvable

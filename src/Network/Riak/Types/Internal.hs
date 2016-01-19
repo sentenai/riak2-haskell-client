@@ -31,6 +31,8 @@ module Network.Riak.Types.Internal
     , IndexQuery(..)
     , IndexValue(..)
     , Tag
+    , SearchQuery
+    , SearchResult(..)
     , VClock(..)
     , Job(..)
     -- * Quorum management
@@ -51,6 +53,7 @@ module Network.Riak.Types.Internal
 
 import Control.Exception (Exception, throw)
 import Data.ByteString.Lazy (ByteString)
+import Data.Sequence (Seq)
 import Data.Digest.Pure.MD5 (md5)
 import Data.IORef (IORef)
 import Data.Typeable (Typeable)
@@ -59,6 +62,9 @@ import Data.Word (Word32)
 import GHC.Generics (Generic)
 import Network.Socket (HostName, ServiceName, Socket)
 import Text.ProtocolBuffers (ReflectDescriptor, Wire)
+
+import Network.Riak.Protocol.SearchQueryResponse -- XXX
+
 
 -- | A client identifier.  This is used by the Riak cluster when
 -- logging vector clock changes, and should be unique for each client.
@@ -166,6 +172,12 @@ data Job = JSON ByteString
          | Erlang ByteString
            deriving (Eq, Show, Typeable)
 
+-- | Search request
+type SearchQuery = ByteString
+
+-- | Solr search result
+newtype SearchResult = SearchResult SearchQueryResponse deriving Show
+
 -- | List of (known to us) inbound or outbound message identifiers.
 data MessageTag = ErrorResponse
                 | PingRequest
@@ -199,6 +211,8 @@ data MessageTag = ErrorResponse
                 | DtFetchResponse
                 | DtUpdateRequest
                 | DtUpdateResponse
+                | SearchQueryRequest
+                | SearchQueryResponse
                   deriving (Eq, Show, Generic)
 
 instance Hashable MessageTag

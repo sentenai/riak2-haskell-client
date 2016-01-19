@@ -24,6 +24,7 @@ module Network.Riak.Response
     , listBuckets
     , getBucket
     , unescapeLinks
+    , search
     ) where
 
 #if __GLASGOW_HASKELL__ < 710
@@ -31,7 +32,7 @@ import Control.Applicative ((<$>))
 #endif
 import Data.Maybe (fromMaybe)
 import Network.Riak.Escape (unescape)
-import Network.Riak.Protocol.BucketProps
+import Network.Riak.Protocol.BucketProps (BucketProps)
 import Network.Riak.Protocol.Content
 import Network.Riak.Protocol.GetBucketResponse
 import Network.Riak.Protocol.GetClientIDResponse
@@ -39,6 +40,8 @@ import Network.Riak.Protocol.GetResponse
 import Network.Riak.Protocol.Link
 import Network.Riak.Protocol.ListBucketsResponse
 import Network.Riak.Protocol.PutResponse
+import Network.Riak.Protocol.SearchQueryResponse
+import qualified Network.Riak.Protocol.YzIndex as Yz
 import Network.Riak.Types.Internal hiding (MessageTag(..))
 import qualified Network.Riak.Protocol.Link as Link
 import qualified Data.ByteString.Lazy as L
@@ -78,3 +81,8 @@ unescapeLinks :: Content -> Content
 unescapeLinks c = c { links = go <$> links c }
   where go l = l { bucket = unescape <$> bucket l
                  , Link.key = unescape <$> Link.key l }
+
+search :: SearchQueryResponse -> SearchResult
+search = SearchResult
+
+

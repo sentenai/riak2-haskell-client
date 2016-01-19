@@ -50,6 +50,8 @@ import Network.Riak.Protocol.DtFetchRequest
 import Network.Riak.Protocol.DtFetchResponse
 import Network.Riak.Protocol.DtUpdateRequest
 import Network.Riak.Protocol.DtUpdateResponse
+import Network.Riak.Protocol.SearchQueryRequest
+import Network.Riak.Protocol.SearchQueryResponse
 import Network.Riak.Types.Internal as Types
 import Text.ProtocolBuffers.Get (Get, getWord8)
 
@@ -274,6 +276,22 @@ instance Response DtUpdateResponse
 
 instance Exchange DtUpdateRequest DtUpdateResponse
 
+instance Tagged SearchQueryRequest where
+    messageTag _ = Types.SearchQueryRequest
+    {-# INLINE messageTag #-}
+
+instance Request SearchQueryRequest where
+    expectedResponse _ = Types.SearchQueryResponse
+    {-# INLINE expectedResponse #-}
+
+instance Tagged SearchQueryResponse where
+    messageTag _ = Types.SearchQueryResponse
+    {-# INLINE messageTag #-}
+
+instance Response SearchQueryResponse
+
+instance Exchange SearchQueryRequest SearchQueryResponse
+
 putTag :: MessageTag -> Put
 putTag m = putWord8 $ message2code HM.! m
 {-# INLINE putTag #-}
@@ -326,8 +344,8 @@ messageCodes = [
  (24, Types.MapReduceResponse),
  (25, Types.IndexRequest),
  (26, Types.IndexResponse),
- -- (27,SearchQueryReq),
- -- (28,SearchQueryResp),
+ (27, Types.SearchQueryRequest),
+ (28, Types.SearchQueryResponse),
  -- (29,ResetBucketRequest),
  -- (30,ResetBucketResp),
  (31, Types.GetBucketTypeRequest),

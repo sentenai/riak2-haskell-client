@@ -45,6 +45,7 @@ module Network.Riak.Request
     -- * Map/reduce
     , MapReduceRequest
     , mapReduce
+    , search
     ) where
 
 #if __GLASGOW_HASKELL__ < 710
@@ -52,7 +53,7 @@ import Control.Applicative ((<$>))
 #endif
 import qualified Data.ByteString.Char8 as B8
 import Data.Monoid
-import Network.Riak.Protocol.BucketProps hiding (r,rw)
+import Network.Riak.Protocol.BucketProps (BucketProps)
 import Network.Riak.Protocol.Content
 import Network.Riak.Protocol.GetClientIDRequest
 import Network.Riak.Protocol.GetServerInfoRequest
@@ -71,6 +72,7 @@ import qualified Network.Riak.Protocol.ListKeysRequest as Keys
 import qualified Network.Riak.Protocol.PutRequest as Put
 import qualified Network.Riak.Protocol.SetBucketRequest as SetBucket
 import qualified Network.Riak.Protocol.GetBucketTypeRequest as GetBucketType
+import qualified Network.Riak.Protocol.SearchQueryRequest as SearchQueryRequest
 
 -- | Create a ping request.
 ping :: PingRequest
@@ -200,3 +202,24 @@ getBucketType t = GetBucketType.GetBucketTypeRequest (escape t)
 mapReduce :: Job -> MapReduceRequest
 mapReduce (JSON bs)   = MapReduceRequest bs "application/json"
 mapReduce (Erlang bs) = MapReduceRequest bs "application/x-erlang-binary"
+
+-- | Create a search request
+search :: SearchQuery -> Index -> SearchQueryRequest.SearchQueryRequest
+search q ix = SearchQueryRequest.SearchQueryRequest {
+                SearchQueryRequest.q = q,
+                SearchQueryRequest.index = ix,
+                SearchQueryRequest.rows = Nothing,
+                SearchQueryRequest.start = Nothing,
+                SearchQueryRequest.sort = Nothing,
+                SearchQueryRequest.filter = Nothing,
+                SearchQueryRequest.df = Nothing,
+                SearchQueryRequest.op = Nothing,
+                SearchQueryRequest.fl = mempty,
+                SearchQueryRequest.presort = Nothing
+              }
+
+
+
+
+
+
