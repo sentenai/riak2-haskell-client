@@ -4,7 +4,28 @@
 -- 
 {-# LANGUAGE TypeFamilies #-}
 
-module Network.Riak.CRDT.Types where
+module Network.Riak.CRDT.Types (
+        -- * Types
+        DataType(..),
+        -- ** Maps
+        Map(..),
+        MapField(..),
+        MapEntry(..), MapEntryTag(..),
+        MapPath(..), MapContent,
+        -- ** Counters
+        Counter(..),
+        -- ** Sets
+        Set(..), setFromSeq,
+        -- ** Registers
+        Register(..),
+        -- ** Flags
+        Flag(..),
+        -- * Modification
+        MapOp(..), SetOp(..), CounterOp(..), FlagOp(..),
+        RegisterOp(..),
+        MapValueOp(..))
+    where
+
 
 import qualified Data.Map as M
 import qualified Data.Set as S
@@ -14,6 +35,7 @@ import Data.ByteString.Lazy (ByteString)
 import Data.Int (Int64)
 import Data.List.NonEmpty
 import Data.Monoid
+
 
 -- data Operation = MapOperation MapOp
 --                | SetOperation SetOp
@@ -28,7 +50,7 @@ data MapField = MapField MapEntryTag ByteString deriving (Eq,Ord,Show)
 
 -- | CRDT Map is a Data.Map indexed by 'MapField' and holding
 -- 'MapEntry'
-newtype Map = Map (M.Map MapField MapEntry) deriving Show
+newtype Map = Map (M.Map MapField MapEntry) deriving (Show)
 
 type MapContent = M.Map MapField MapEntry
 
@@ -45,7 +67,7 @@ data MapEntry = MapCounter Counter
               | MapRegister Register
               | MapFlag Flag
               | MapMap Map
-                deriving Show
+                deriving (Show)
 
 -- data ME = MESet Set | MECounter Counter
 
@@ -103,8 +125,11 @@ data RegisterOp = RegisterSet ByteString deriving Show
 -- | flags can be enabled/disabled
 data FlagOp = FlagSet Bool deriving Show
 
-newtype Flag = Flag Bool deriving Show
-newtype Register = Register ByteString deriving Show
+-- | Flag holds a 'Bool'
+newtype Flag = Flag Bool deriving (Show)
+
+-- | Register holds a 'ByteString'
+newtype Register = Register ByteString deriving (Show)
 
 -- | operations on map values
 data MapValueOp = MapCounterOp CounterOp
