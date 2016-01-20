@@ -9,7 +9,6 @@ module Properties where
 import           Control.Applicative          ((<$>))
 #endif
 import qualified Data.ByteString.Lazy         as L
-import           Data.IORef                   (IORef, modifyIORef, newIORef)
 import           Data.Maybe
 import qualified Network.Riak.Basic           as B
 import           Network.Riak.Connection      (defaultClient)
@@ -34,9 +33,6 @@ newtype QCKey = QCKey Riak.Key deriving Show
 instance Arbitrary QCKey where
     arbitrary = QCKey <$> arbitrary `suchThat` (not . L.null)
 
-cruft :: IORef [(Bucket, Key)]
-{-# NOINLINE cruft #-}
-cruft = unsafePerformIO $ newIORef []
 
 pool :: Pool
 {-# NOINLINE pool #-}
@@ -48,7 +44,6 @@ t_put_get (QCBucket b) (QCKey k) v =
     monadicIO $ assert . uncurry (==) =<< run act
   where
     act = withConnection pool $ \c -> do
-            modifyIORef cruft ((b,k):)
             p <- Just <$> B.put c b k Nothing (binary v) Default Default
             r <- B.get c b k Default
             return (p,r)

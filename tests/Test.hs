@@ -3,9 +3,7 @@
 
 module Main where
 
-import           Control.Exception            (finally)
 import           Control.Monad
-import           Data.IORef
 import qualified Data.Map                     as M
 import qualified Data.Set                     as S
 import           Data.List.NonEmpty           (NonEmpty(..))
@@ -23,11 +21,8 @@ import           Test.Tasty
 import           Test.Tasty.HUnit
 
 main :: IO ()
-main = defaultMain tests `finally` cleanup
-  where
-    cleanup = withConnection Properties.pool $ \c -> do
-                bks <- readIORef Properties.cruft
-                forM_ bks $ \(b,k) -> B.delete c b k Default
+main = defaultMain tests
+
 
 tests :: TestTree
 tests = testGroup "Tests" [properties,
