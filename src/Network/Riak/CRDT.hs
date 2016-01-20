@@ -99,22 +99,21 @@ class CRDT a where
     modify :: Operation_ a -> a -> a
     sendModify :: Connection
                -> BucketType -> Bucket -> Key
-               -> [Operation_ a] -> IO ()
+               -> a -> [Operation_ a] -> IO ()
 
 instance CRDT Counter where
     type Operation_ Counter = CounterOp
     modify = modifyCounter
-    sendModify = counterUpdate
+    sendModify c t b k _ o = counterUpdate c t b k o
 
 instance CRDT Set where
     type Operation_ Set = SetOp
     modify = modifySet
-    sendModify = setUpdate
+    sendModify c t b k _ o = setUpdate c t b k o
 
 instance CRDT Map where
     type Operation_ Map = MapOp
     modify = modifyMap
-    sendModify = mapUpdate
-
+    sendModify c t b k _ o = mapUpdate c t b k o
 
 
