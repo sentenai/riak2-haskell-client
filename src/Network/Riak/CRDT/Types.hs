@@ -2,7 +2,7 @@
 -- 
 -- Haskell-side view of CRDT
 -- 
-{-# LANGUAGE TypeFamilies #-}
+{-# LANGUAGE TypeFamilies, GeneralizedNewtypeDeriving, PatternSynonyms #-}
 
 module Network.Riak.CRDT.Types (
         -- * Types
@@ -48,9 +48,12 @@ import Data.Monoid
 -- types)
 data MapField = MapField MapEntryTag ByteString deriving (Eq,Ord,Show)
 
+pattern SetKey x = MapField MapSetTag x
+
 -- | CRDT Map is a Data.Map indexed by 'MapField' and holding
--- 'MapEntry'
-newtype Map = Map (M.Map MapField MapEntry) deriving (Show)
+-- 'MapEntry'. Maps are specials in a way that they can additionally
+-- hold 'Flag's, 'Register's, and most importantly, other 'Map's.
+newtype Map = Map (M.Map MapField MapEntry) deriving (Eq,Show)
 
 type MapContent = M.Map MapField MapEntry
 
@@ -67,7 +70,7 @@ data MapEntry = MapCounter Counter
               | MapRegister Register
               | MapFlag Flag
               | MapMap Map
-                deriving (Show)
+                deriving (Eq,Show)
 
 -- data ME = MESet Set | MECounter Counter
 
@@ -105,6 +108,7 @@ tagOf' MapMapOp{}      = MapMapTag
 -- | Selector (“xpath”) inside 'Map'
 newtype MapPath = MapPath (NonEmpty MapField) deriving Show
 
+pattern MapPath_ a = MapPath a
 
 -- instance CRDT Counter where
 --     type Operation_ Counter = CounterOp
@@ -126,10 +130,10 @@ data RegisterOp = RegisterSet ByteString deriving Show
 data FlagOp = FlagSet Bool deriving Show
 
 -- | Flag holds a 'Bool'
-newtype Flag = Flag Bool deriving (Show)
+newtype Flag = Flag Bool deriving (Eq,Show)
 
 -- | Register holds a 'ByteString'
-newtype Register = Register ByteString deriving (Show)
+newtype Register = Register ByteString deriving (Eq,Show)
 
 -- | operations on map values
 data MapValueOp = MapCounterOp CounterOp
@@ -144,11 +148,15 @@ data MapValueOp = MapCounterOp CounterOp
 data DataType = DTCounter Counter
               | DTSet Set
               | DTMap Map
-                deriving (Show)
+                deriving (Eq,Show)
 
 -- | CRDT Set is a Data.Set
-newtype Set = Set (S.Set ByteString) deriving (Eq,Show)
-data SetOp = SetAdd ByteString | SetRemove ByteString deriving Show
+newtype Set = Set (S.Set ByteString) deriving (Eq,Show,Monoid)
+
+-- | CRDT Set operations
+data SetOp = SetAdd ByteString    -- ^ add element to the set
+           | SetRemove ByteString -- ^ remove element from the set
+             deriving Show
 
 setFromSeq :: Seq.Seq ByteString -> Set
 setFromSeq = Set . S.fromList . F.toList
