@@ -1,16 +1,31 @@
-{-# LANGUAGE OverloadedStrings, FlexibleContexts, TupleSections #-}
-module Machine where
+{-# LANGUAGE OverloadedStrings, FlexibleContexts, TupleSections, ScopedTypeVariables,
+  GADTs, StandaloneDeriving, UndecidableInstances #-}
+{-# OPTIONS_GHC -fno-warn-orphans #-}
+module CRDTProperties (prop_counters,
+                       prop_sets,
+                       prop_maps,
+                       tests) where
+
+-- |
+-- The idea: send arbitrary stream of commands to riak, collect each
+-- command output to list :: [Maybe RiakReturnValue].  Then see it we
+-- get the same list of results simulating Riak in this module.
 
 import Test.QuickCheck
 import Test.QuickCheck.Monadic
 import Data.ByteString.Lazy (ByteString)
 import Control.Applicative
 import Data.Maybe
+import Data.List.NonEmpty
 import qualified Data.Map as Map
+import qualified Data.Set as Set
 import Control.Monad.RWS
 import Control.Exception (bracket)
-import System.Process
-import System.Exit (ExitCode(ExitSuccess))
+import Data.Proxy
+
+import Test.Tasty
+import Test.Tasty.QuickCheck
+
 
 import qualified Network.Riak.Basic as B
 import qualified Network.Riak.Value as V
@@ -22,6 +37,8 @@ newtype Key        = Key ByteString deriving (Show,Eq,Ord)
 newtype Value      = Value ByteString deriving Show
 
 class Values a where values :: [a]
+
+-- Not many. We want to hit each multiple times
 instance Values BucketType where values = BucketType <$> ["sets","counters","maps"]
 instance Values Bucket     where values = Bucket <$> ["A","B"]
 instance Values Key        where values = Key <$> ["a","b","c"]
@@ -40,10 +57,12 @@ instance Arbitrary Point where arbitrary = elements values
 
 type RiakState = Map.Map Point C.DataType
 
+-- | run action in some riak connection
+withSomeConnection :: (B.Connection -> IO a) -> IO a
 withSomeConnection = bracket (B.connect B.defaultClient) B.disconnect
 
 -- | observe all current values we care about (instance 'Values') in
---   riak
+--   riak, gather them into a map
 observeRiak :: IO RiakState
 observeRiak = Map.fromList . catMaybes <$> observeRiak'
 
@@ -54,64 +73,153 @@ observeRiak' = withSomeConnection $ \c ->
                           | p@(Point (BucketType t) (Bucket b) (Key k)) <- values ]
 
 
-data Action = CGet Bucket Key
-            | CUpdate Bucket Key C.CounterOp
-              deriving Show
+-- | For each CRDT a => a,
+data Op a = CGet Bucket Key                     -- ^ we can get a value
+          | CUpdate Bucket Key (C.Operation_ a) -- ^ we can update a value
 
-instance Arbitrary C.CounterOp where
-    arbitrary = C.Inc <$> choose (-16,16)
+deriving instance (Show (C.Operation_ a), C.CRDT a) => Show (Op a)
 
-instance Arbitrary Action where
+class C.CRDT t => Action t where
+    bucketType :: Proxy t -> ByteString
+    emptyVal :: t
+    fromDT :: C.DataType -> t
+    toDT :: t -> C.DataType
+
+instance Action C.Counter where
+    bucketType _ = "counters"
+    emptyVal = C.Counter 0
+    fromDT (C.DTCounter c) = c
+    fromDT _               = error "expected counter" -- ok for tests
+    toDT = C.DTCounter
+
+instance Action C.Set where
+    bucketType _ = "sets"
+    emptyVal = C.Set Set.empty
+    fromDT (C.DTSet c) = c
+    fromDT _           = error "expected set"
+    toDT = C.DTSet
+
+instance Action C.Map where
+    bucketType _ = "maps"
+    emptyVal = C.Map Map.empty
+    fromDT (C.DTMap c) = c
+    fromDT _           = error "expected map"
+    toDT = C.DTMap
+
+instance (Arbitrary a, Arbitrary (C.Operation_ a)) => Arbitrary (Op a) where
     arbitrary = oneof [
                  CGet <$> arbitrary <*> arbitrary,
                  CUpdate <$> arbitrary <*> arbitrary <*> arbitrary
                 ]
 
-countersType = "counters"
+instance Arbitrary C.Counter where
+    arbitrary = C.Counter <$> arbitrary
 
-riak :: [Action] -> RWST () [Maybe C.DataType] (B.Connection,()) IO ()
-riak [] = pure ()
+instance Arbitrary C.CounterOp where
+    arbitrary = C.CounterInc <$> choose (-16,16)
 
-riak (CGet (Bucket b) (Key k) : as) = do
-  (c,_) <- get
-  r <- liftIO $ C.get c countersType b k
-  --let cv = maybe Nothing (\(C.DTCounter cnt) -> Just cnt) r
+instance Arbitrary C.SetOp where
+    arbitrary = oneof [
+                 C.SetAdd <$> arbitrary, C.SetRemove <$> arbitrary
+                ]
+
+instance Arbitrary C.Set where
+    arbitrary = C.Set . Set.fromList <$> arbitrary
+
+instance Arbitrary ByteString where
+    arbitrary = elements [ "foo", "bar", "baz" ]
+
+instance Arbitrary C.MapOp where
+    arbitrary = C.MapUpdate <$> arbitrary <*> arbitrary
+
+instance Arbitrary C.MapPath where
+    arbitrary = (\a b -> C.MapPath (a :| b)) <$> arbitrary <*> arbitrary
+
+instance Arbitrary C.MapField where
+    arbitrary = C.MapField <$> arbitrary <*> arbitrary
+
+instance Arbitrary C.MapEntryTag where
+    arbitrary = elements [ C.MapCounterTag ]
+
+instance Arbitrary C.MapValueOp where
+    arbitrary = oneof [ C.MapCounterOp <$> arbitrary ]
+
+instance Arbitrary C.Map
+
+
+riak :: forall a. Action a => a -> Proxy a
+     -> [Op a] -> RWST () [Maybe C.DataType] B.Connection IO ()
+
+riak _ _ [] = pure ()
+
+riak v p (CGet (Bucket b) (Key k) : as) = do
+  c <- get
+  r <- liftIO $ C.get c (bucketType p) b k
   tell [r]
-  riak as
+  riak v p as
 
-riak (CUpdate (Bucket b) (Key k) op : as) = do
-  (c,_) <- get
-  liftIO $ C.counterUpdate c countersType b k [op]
-  riak as
+riak v p (CUpdate (Bucket b) (Key k) op : as) = do
+  c <- get
+  liftIO $ C.sendModify c (bucketType p) b k v [op]
+  riak v p as
 
 
-doRiak conn ops = do (_,_,r) <- runRWST (riak ops) () (conn,())
-                     pure r
+doRiak v p ops = withSomeConnection $ \conn -> do
+                   --print ops
+                   (_,_,r) <- runRWST (riak v p ops) () conn
+                   pure r
 
-doPure stat ops = do (_,_,r) <- runRWST (doPurx ops) () stat
-                     pure r
+doPure :: Action a => RiakState
+       -> a -> Proxy a -> [Op a] -> PropertyM IO [Maybe C.DataType]
+doPure stat v p ops = do (_,_,r) <- runRWST (pure_ v p ops) () stat
+                         pure r
 
-doPurx ops = go ops
-    where --go :: [Action]
-          --   -> RWST () [Maybe C.DataType] RiakState (PropertyM IO) ()
-          go [] = pure ()
-          go (CGet b k : as) = do v <- gets (Map.lookup (Point (BucketType"counters") b k))
-                                  tell [v]
-                                  go as
-          go (CUpdate b k op : as) = do modify (Map.alter (update op)
-                                                     (Point (BucketType"counters") b k))
-                                        go as
+pure_ :: Action a => a -> Proxy a
+       -> [Op a] -> RWST () [Maybe C.DataType] RiakState (PropertyM IO) ()
 
-update op Nothing = Nothing
-update op (Just (C.DTCounter c)) = Just . C.DTCounter . C.modifyCounter [op] $ c
-update op (Just _) = error "not a counter"
+pure_ _ _ [] = pure ()
 
-prop_counters ops = monadicIO $ \c -> do
-                      stat <- run observeRiak
-                      r1 <- doPure stat ops
-                      r2 <- run $ doRiak c ops
-                      assert $ r1==r2
+pure_ x p (CGet b k : as) = do
+  v <- gets (Map.lookup (Point (BucketType (bucketType p)) b k))
+  tell [v]
+  pure_ x p as
 
+pure_ x p (CUpdate b k op : as) = do
+  modify (Map.alter (update x op)
+                    (Point (BucketType (bucketType p)) b k))
+  pure_ x p as
+
+
+update :: forall a. (Action a) => a -> C.Operation_ a -> Maybe C.DataType -> Maybe C.DataType
+update z op Nothing = update z op (Just . toDT' $ emptyVal) -- it's ok to update non-set value
+                                                            -- in riak's mind
+    where toDT' :: a -> C.DataType
+          toDT' = toDT
+update z op (Just dt) = Just . toDT . C.modify op . fromDT' $ dt
+    where fromDT' :: C.DataType -> a
+          fromDT' = fromDT
+
+
+prop :: Action a => a -> Proxy a -> [Op a] -> Property
+prop v p ops = monadicIO $ do
+                          stat <- run observeRiak
+                          r1 <- doPure stat v p ops
+                          r2 <- run $ doRiak v p ops
+                          run . when (r1/=r2) $ print (r1,r2)
+                          assert $ r1 == r2
+
+
+prop_counters = prop emptyVal (Proxy :: Proxy C.Counter)
+prop_sets     = prop emptyVal (Proxy :: Proxy C.Set)
+prop_maps     = prop emptyVal (Proxy :: Proxy C.Map)
+
+
+
+tests :: TestTree
+tests = testGroup "CRDT quickCheck" [
+         testProperty "counters" prop_counters,
+         testProperty "sets" prop_sets
+        ]
 
 {-
 -- Quick'n'dirty (but too slow) way to clean all riak db state
@@ -130,21 +238,3 @@ timeout secs cmd = race a b
 
 -}
 
-{-
-
-data BasicAction = Put Bucket Key Value
-                 | Get Bucket Key
-
--- ru :: [BasicAction] -> RWST _ [Maybe ByteString]
---                        (Map.Map (ByteString, ByteString) ByteString) _ ()
-ru [] = pure ()
-ru (Put (Bucket b) (Key k) (Value v) : as)
-    = do modify (Map.alter (const $ Just v) (b,k))
-         ru as
-ru (Get (Bucket b) (Key k) : as)
-    = do v <- gets (Map.lookup (b,k))
-         tell [v]
-         ru as
-
-
--}

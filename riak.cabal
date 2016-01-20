@@ -158,4 +158,7 @@ test-suite test
     tasty,
     tasty-hunit,
     tasty-quickcheck,
-    text
+    text,
+    mtl,
+    semigroups
+
