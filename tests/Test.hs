@@ -8,6 +8,7 @@ import           Control.Monad
 import           Data.IORef
 import qualified Data.Map                     as M
 import qualified Data.Set                     as S
+import           Data.List.NonEmpty           (NonEmpty(..))
 import           Data.Text                    (Text)
 import qualified Network.Riak                 as Riak
 import qualified Network.Riak.Basic           as B
@@ -33,7 +34,8 @@ tests = testGroup "Tests" [properties,
                            integrationalTests,
                            ping'o'death,
                            counter,
-                           set
+                           set,
+                           map_
                           ]
 properties :: TestTree
 properties = testGroup "Properties" Properties.tests
@@ -82,14 +84,32 @@ counter = testCase "increment" $ do
                  C.get c "counters" "xxx" "yyy"
 
 set :: TestTree
-set = testCase "increment" $ do
+set = testCase "set add" $ do
         conn <- Riak.connect Riak.defaultClient
         C.setUpdate conn btype buck key [C.SetRemove val]
         C.setUpdate conn btype buck key [C.SetAdd val]
         Just (C.DTSet (C.Set r)) <- C.get conn btype buck key
         assertBool "-foo +foo => contains foo" $ val `S.member` r
     where
-      add c = do C.setUpdate c btype buck key [C.SetAdd val]
-                 C.get c btype buck key
       (btype,buck,key,val) = ("sets","xxx","yyy","foo")
+
+map_ :: TestTree
+map_ = testCase "map update" $ do
+         conn <- Riak.connect Riak.defaultClient
+         Just (C.DTMap a) <- act conn
+         Just (C.DTMap b) <- act conn
+         assertEqual "map update" (C.modify mapOp a) b
+    where
+      act c = do C.mapUpdate c btype buck key [mapOp]
+                 C.get c btype buck key 
+
+      btype = "maps"
+      (buck,key) = ("xxx","yyy")
+
+      mapOp = C.MapUpdate (C.MapPath (C.MapField C.MapMapTag "X"
+                                      :| C.MapField C.MapMapTag "Y"
+                                      : C.MapField C.MapCounterTag "Z"
+                                      : []))
+                          (C.MapCounterOp (C.CounterInc 1))
+
 
