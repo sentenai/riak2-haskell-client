@@ -43,23 +43,24 @@ modifySet ops (Set c) = Set (c `S.union` adds S.\\ rems)
 
 modifyMap :: MapOp -> Map -> Map
 --modifyMap (MapRemove path) m    = m
-modifyMap (MapUpdate path op) m = modifyMap1 path (Just op) m
+modifyMap (MapUpdate path op) m = modifyMap1 path op m
 
 -- l1 = Map (M.fromList [])
 -- l2 = Map (M.fromList [(MapField MapSetTag "X", MapSet (Set S.empty))])
 
 
-modifyMap1 :: MapPath -> Maybe MapValueOp -> Map -> Map
-modifyMap1 (MapPath (e :| [])) op m = modMap e op m
+modifyMap1 :: MapPath -> MapValueOp -> Map -> Map
+modifyMap1 (MapPath (e :| [])) op m = modMap mf op m
+    where mf = MapField (tagOf' op) e
 modifyMap1 (MapPath (e :| (r:rs))) op (Map m')
-    = Map $ M.update (Just . f) e m'
+    = Map $ M.update (Just . f) (MapField MapMapTag e) m'
       where f :: MapEntry -> MapEntry
             f (MapMap m) = MapMap . modifyMap1 (MapPath (r :| rs)) op $ m
             f z = z
 
-modMap :: MapField -> (Maybe MapValueOp) -> Map -> Map
-modMap ix Nothing (Map m) = Map $ M.delete ix m
-modMap ix (Just op) (Map m) = Map $ M.update (Just . modifyMapValue op) ix m
+modMap :: MapField -> MapValueOp -> Map -> Map
+--modMap ix Nothing (Map m) = Map $ M.delete ix m
+modMap ix op (Map m) = Map $ M.update (Just . modifyMapValue op) ix m
 
 modifyMapValue :: MapValueOp -> MapEntry -> MapEntry
 modifyMapValue (MapSetOp op) (MapSet s)           = MapSet      . modifySet op $ s

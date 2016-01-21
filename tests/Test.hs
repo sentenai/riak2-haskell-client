@@ -101,10 +101,7 @@ map_ = testCase "map update" $ do
       btype = "maps"
       (buck,key) = ("xxx","yyy")
 
-      mapOp = C.MapUpdate (C.MapPath (C.MapField C.MapMapTag "X"
-                                      :| C.MapField C.MapMapTag "Y"
-                                      : C.MapField C.MapCounterTag "Z"
-                                      : []))
+      mapOp = C.MapUpdate (C.MapPath ("X" :| "Y" : "Z" : []))
                           (C.MapCounterOp (C.CounterInc 1))
 
 

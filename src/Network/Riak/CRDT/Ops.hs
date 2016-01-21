@@ -76,12 +76,12 @@ mapOpPB ops = PBMap.MapOp rems updates
 
 
 toUpdate :: MapPath -> MapValueOp -> PBMap.MapUpdate
-toUpdate (MapPath (e :| [])) op     = toUpdate' e op
-toUpdate (MapPath (e :| (r:rs))) op = toUpdate' e op'
+toUpdate (MapPath (e :| [])) op     = toUpdate' e (tagOf' op) op
+toUpdate (MapPath (e :| (r:rs))) op = toUpdate' e MapMapTag op'
     where op' = MapMapOp (MapUpdate (MapPath (r:|rs)) op)
 
-toUpdate' :: MapField -> MapValueOp -> PBMap.MapUpdate
-toUpdate' f op = setSpecificOp op (updateNothing f)
+toUpdate' :: ByteString -> MapEntryTag -> MapValueOp -> PBMap.MapUpdate
+toUpdate' f t op = setSpecificOp op (updateNothing f t)
 
 setSpecificOp :: MapValueOp -> PBMap.MapUpdate -> PBMap.MapUpdate
 setSpecificOp (MapCounterOp cop) u  = u { PBMap.counter_op  = Just $ counterOpPB [cop] }
@@ -91,15 +91,15 @@ setSpecificOp (MapFlagOp fop) u     = u { PBMap.flag_op     = Just $ flagOpPB fo
 setSpecificOp (MapMapOp mop) u      = u { PBMap.map_op      = Just $ mapOpPB [mop] }
 
 
-updateNothing f = PBMap.MapUpdate { PBMap.field = toField f,
+updateNothing f t = PBMap.MapUpdate { PBMap.field = toField f t,
                                     PBMap.counter_op = Nothing,
                                     PBMap.set_op = Nothing,
                                     PBMap.register_op = Nothing,
                                     PBMap.flag_op = Nothing,
                                     PBMap.map_op = Nothing }
 
-toField :: MapField -> PBMap.MapField
-toField (MapField t name) = PBMap.MapField { PBMap.name = name,
+--toField :: MapField -> PBMap.MapField
+toField name t = PBMap.MapField { PBMap.name = name,
                                              PBMap.type' = typ t }
     where typ MapCounterTag  = PBMap.COUNTER
           typ MapSetTag      = PBMap.SET

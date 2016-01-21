@@ -10,7 +10,7 @@ module Network.Riak.CRDT.Types (
         -- ** Maps
         Map(..),
         MapField(..),
-        MapEntry(..), MapEntryTag(..),
+        MapEntry(..), MapEntryTag(..), tagOf',
         MapPath(..), MapContent,
         -- ** Counters
         Counter(..),
@@ -106,7 +106,7 @@ tagOf' MapMapOp{}      = MapMapTag
 -- deriving instance Show MapEntry
 
 -- | Selector (“xpath”) inside 'Map'
-newtype MapPath = MapPath (NonEmpty MapField) deriving Show
+newtype MapPath = MapPath (NonEmpty ByteString) deriving Show
 
 pattern MapPath_ a = MapPath a
 
