@@ -34,8 +34,9 @@ import qualified Data.Foldable as F
 import Data.ByteString.Lazy (ByteString)
 import Data.Int (Int64)
 import Data.List.NonEmpty
-import Data.Monoid
-
+import Data.Semigroup
+import Data.Default.Class
+import Data.Proxy
 
 -- data Operation = MapOperation MapOp
 --                | SetOperation SetOp
@@ -57,6 +58,9 @@ newtype Map = Map (M.Map MapField MapEntry) deriving (Eq,Show)
 
 type MapContent = M.Map MapField MapEntry
 
+instance Default Map where
+    def = Map M.empty
+
 data MapEntryTag = MapCounterTag
                  | MapSetTag
                  | MapRegisterTag
@@ -71,6 +75,9 @@ data MapEntry = MapCounter Counter
               | MapFlag Flag
               | MapMap Map
                 deriving (Eq,Show)
+
+
+
 
 -- data ME = MESet Set | MECounter Counter
 
@@ -120,7 +127,7 @@ pattern MapPath_ a = MapPath a
 
 -- | map operations
 data MapOp = --MapRemove MapField           -- ^ remove value in map
-             MapUpdate MapPath MapValueOp -- ^ update value on path by operation
+             MapUpdate MapPath MapValueOp   -- ^ update value on path by operation
              deriving Show
 
 -- | registers can be set
@@ -132,8 +139,39 @@ data FlagOp = FlagSet Bool deriving Show
 -- | Flag holds a 'Bool'
 newtype Flag = Flag Bool deriving (Eq,Show)
 
+-- | Last-wins monoid for 'Flag'
+instance Monoid Flag where
+    mempty = Flag False
+    mappend = (<>)
+
+-- | Last-wins semigroup for 'Flag'
+instance Semigroup Flag where
+    a <> b = getLast (Last a <> Last b)
+
+instance Default Flag where
+    def = mempty
+
 -- | Register holds a 'ByteString'
 newtype Register = Register ByteString deriving (Eq,Show)
+
+-- | Last-wins monoid for 'Register'
+instance Monoid Register where
+    mempty = Register ""
+    mappend = (<>)
+
+instance Semigroup Register where
+    a <> b = getLast (Last a <> Last b)
+
+instance Default Register where
+    def = mempty
+
+
+-- data MapValueOp a where
+--     MapCounterOp :: CounterOp -> MapValueOp Counter
+--     MapSetOp :: SetOp -> MapValueOp Set
+--     MapRegisterOp :: RegisterOp -> MapValueOp Register
+--     MapFlagOp :: FlagOp -> MapValueOp Flag
+--     MapMapOp :: MapOp -> MapValueOp Map
 
 -- | operations on map values
 data MapValueOp = MapCounterOp CounterOp
@@ -153,6 +191,12 @@ data DataType = DTCounter Counter
 -- | CRDT Set is a Data.Set
 newtype Set = Set (S.Set ByteString) deriving (Eq,Show,Monoid)
 
+instance Semigroup Set where
+    Set a <> Set b = Set (a <> b)
+
+instance Default Set where
+    def = Set mempty
+
 -- | CRDT Set operations
 data SetOp = SetAdd ByteString    -- ^ add element to the set
            | SetRemove ByteString -- ^ remove element from the set
@@ -164,9 +208,20 @@ setFromSeq = Set . S.fromList . F.toList
 -- | CRDT Counter hold a integer 'Count'
 newtype Counter = Counter Count deriving (Eq,Show)
 type Count = Int64
+
+instance Semigroup Counter where
+    Counter a <> Counter b = Counter . getSum $ Sum a <> Sum b
+
+instance Monoid Counter where
+    mempty = Counter 0
+    mappend = (<>)
+
+instance Default Counter where
+    def = mempty
+
 data CounterOp = CounterInc Count deriving (Show)
 
 instance Monoid CounterOp where
     mempty = CounterInc 0
-    CounterInc x `mappend` CounterInc y = CounterInc (x+y)
+    CounterInc x `mappend` CounterInc y = CounterInc . getSum $ Sum x <> Sum y
 
