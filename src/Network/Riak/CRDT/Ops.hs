@@ -98,9 +98,9 @@ updateNothing f t = PBMap.MapUpdate { PBMap.field = toField f t,
                                     PBMap.flag_op = Nothing,
                                     PBMap.map_op = Nothing }
 
---toField :: MapField -> PBMap.MapField
+toField :: ByteString -> MapEntryTag -> PBMap.MapField
 toField name t = PBMap.MapField { PBMap.name = name,
-                                             PBMap.type' = typ t }
+                                  PBMap.type' = typ t }
     where typ MapCounterTag  = PBMap.COUNTER
           typ MapSetTag      = PBMap.SET
           typ MapRegisterTag = PBMap.REGISTER
