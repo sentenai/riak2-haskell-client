@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts, TupleSections, ScopedTypeVariables,
-  GADTs, StandaloneDeriving, UndecidableInstances #-}
+  GADTs, StandaloneDeriving, UndecidableInstances, PatternGuards #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module CRDTProperties (prop_counters,
                        prop_sets,
@@ -21,6 +21,7 @@ import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Control.Monad.RWS
 import Control.Exception (bracket)
+import Data.Default.Class
 import Data.Proxy
 
 import Test.Tasty
@@ -76,38 +77,49 @@ observeRiak' bt@(BucketType t_) = withSomeConnection $ \c ->
                 ]
 
 
--- | For each CRDT a => a,
+-- | We will supply a list of these operations:
+-- 
+-- For each CRDT a => a,
 data Op a = CGet Bucket Key                     -- ^ we can get a value
           | CUpdate Bucket Key (C.Operation_ a) -- ^ we can update a value
 
 deriving instance (Show (C.Operation_ a), C.CRDT a) => Show (Op a)
 
-class C.CRDT t => Action t where
+class (Show t, C.CRDT t, Default t) => Action t where
+    -- | bucket type for this type (assumed/hardcoded)
     bucketType :: Proxy t -> ByteString
-    emptyVal :: t
+    -- | extract a value from 'C.DataType', or throw an error
     fromDT :: C.DataType -> t
+    -- | pack a value into 'C.DataType'
     toDT :: t -> C.DataType
+    -- | a kludge: if there's no value at the moment, having been
+    -- provieded with an op, will riak create and operate on a empty
+    -- value?
+    updateCreates :: Proxy t -> C.Operation_ t -> Bool
+
 
 instance Action C.Counter where
     bucketType _ = "counters"
-    emptyVal = C.Counter 0
     fromDT (C.DTCounter c) = c
     fromDT _               = error "expected counter" -- ok for tests
     toDT = C.DTCounter
+    updateCreates _ _ = True
 
 instance Action C.Set where
     bucketType _ = "sets"
-    emptyVal = C.Set Set.empty
     fromDT (C.DTSet c) = c
     fromDT _           = error "expected set"
     toDT = C.DTSet
+    updateCreates _ C.SetAdd{}    = True
+    updateCreates _ C.SetRemove{} = False
 
 instance Action C.Map where
     bucketType _ = "maps"
-    emptyVal = C.Map Map.empty
     fromDT (C.DTMap c) = c
     fromDT _           = error "expected map"
     toDT = C.DTMap
+    updateCreates _ (C.MapUpdate _ (C.MapSetOp C.SetRemove{})) = False
+    updateCreates _ _                                          = True
 
 instance (Arbitrary a, Arbitrary (C.Operation_ a)) => Arbitrary (Op a) where
     arbitrary = oneof [
@@ -194,16 +206,21 @@ pure_ x p (CUpdate b k op : as) = do
 
 
 update :: forall a. (Action a) => a -> C.Operation_ a -> Maybe C.DataType -> Maybe C.DataType
-update z op Nothing = update z op (Just . toDT' $ emptyVal) -- it's ok to update non-set value
-                                                            -- in riak's mind
-    where toDT' :: a -> C.DataType
-          toDT' = toDT
+update z op Nothing
+       | updateCreates (Proxy :: Proxy a) op
+           = update z op (Just . toDT' $ def) -- it's ok to update non-set value
+                                              -- in riak's mind
+       | otherwise
+           = Nothing
+             where toDT' :: a -> C.DataType
+                   toDT' = toDT
 update z op (Just dt) = Just . toDT . C.modify op . fromDT' $ dt
     where fromDT' :: C.DataType -> a
           fromDT' = fromDT
 
 
-prop :: Action a => a -> Proxy a -> [Op a] -> Property
+
+prop :: (Show (C.Operation_ a), Action a) => a -> Proxy a -> [Op a] -> Property
 prop v p ops = monadicIO $ do
                           stat <- run $ observeRiak p
                           r1 <- doPure stat v p ops
@@ -212,9 +229,9 @@ prop v p ops = monadicIO $ do
                           assert $ r1 == r2
 
 
-prop_counters = prop emptyVal (Proxy :: Proxy C.Counter)
-prop_sets     = prop emptyVal (Proxy :: Proxy C.Set)
-prop_maps     = prop emptyVal (Proxy :: Proxy C.Map)
+prop_counters = prop def (Proxy :: Proxy C.Counter)
+prop_sets     = prop def (Proxy :: Proxy C.Set)
+prop_maps     = prop def (Proxy :: Proxy C.Map)
 
 
 

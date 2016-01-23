@@ -164,7 +164,8 @@ test-suite test
     tasty-quickcheck,
     text,
     mtl,
-    semigroups
+    semigroups,
+    data-default-class
 
 
 benchmark bench
