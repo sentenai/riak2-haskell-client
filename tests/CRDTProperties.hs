@@ -59,15 +59,21 @@ type RiakState = Map.Map Point C.DataType
 
 
 -- | observe all current values we care about (instance 'Values') in
---   riak, gather them into a map
-observeRiak :: IO RiakState
-observeRiak = Map.fromList . catMaybes <$> observeRiak'
+--   riak, gather them into a map.
+-- 
+-- As it turns out, observeRiak is not quite cheap operation after
+-- /types/maps/… are populated. So first argument is proxy for the
+-- (only) type we are interested in.
+observeRiak :: Action a => Proxy a -> IO RiakState
+observeRiak p = Map.fromList . catMaybes <$> observeRiak' (BucketType $ bucketType p)
 
-observeRiak' :: IO [Maybe (Point, C.DataType)]
-observeRiak' = withSomeConnection $ \c ->
-               sequence [ do r <- C.get c t b k
-                             pure . fmap (p,) $ r
-                          | p@(Point (BucketType t) (Bucket b) (Key k)) <- values ]
+observeRiak' :: BucketType -> IO [Maybe (Point, C.DataType)]
+observeRiak' bt@(BucketType t_) = withSomeConnection $ \c ->
+       sequence [ do r <- C.get c t_ b_ k_
+                     pure . fmap (p,) $ r
+                  | b <- values, k <- values,
+                    let p@(Point _ (Bucket b_) (Key k_)) = Point bt b k
+                ]
 
 
 -- | For each CRDT a => a,
@@ -199,7 +205,7 @@ update z op (Just dt) = Just . toDT . C.modify op . fromDT' $ dt
 
 prop :: Action a => a -> Proxy a -> [Op a] -> Property
 prop v p ops = monadicIO $ do
-                          stat <- run observeRiak
+                          stat <- run $ observeRiak p
                           r1 <- doPure stat v p ops
                           r2 <- run $ doRiak v p ops
                           run . when (r1/=r2) $ print (r1,r2)
