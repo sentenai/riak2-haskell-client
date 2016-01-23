@@ -149,6 +149,7 @@ test-suite test
   other-modules:
     Properties
     CRDTProperties
+    Common
 
   build-depends:
     base,

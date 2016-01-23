@@ -25,7 +25,7 @@ import Data.Proxy
 
 import Test.Tasty
 import Test.Tasty.QuickCheck
-
+import Common
 
 import qualified Network.Riak.Basic as B
 import qualified Network.Riak.Value as V
@@ -57,9 +57,6 @@ instance Arbitrary Point where arbitrary = elements values
 
 type RiakState = Map.Map Point C.DataType
 
--- | run action in some riak connection
-withSomeConnection :: (B.Connection -> IO a) -> IO a
-withSomeConnection = bracket (B.connect B.defaultClient) B.disconnect
 
 -- | observe all current values we care about (instance 'Values') in
 --   riak, gather them into a map

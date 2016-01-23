@@ -11,14 +11,12 @@ import           Control.Applicative          ((<$>))
 import qualified Data.ByteString.Lazy         as L
 import           Data.Maybe
 import qualified Network.Riak.Basic           as B
-import           Network.Riak.Connection      (defaultClient)
-import           Network.Riak.Connection.Pool (Pool, create, withConnection)
 import           Network.Riak.Content         (binary)
 import           Network.Riak.Types           as Riak
-import           System.IO.Unsafe             (unsafePerformIO)
 import           Test.QuickCheck.Monadic      (assert, monadicIO, run)
 import           Test.Tasty
 import           Test.Tasty.QuickCheck
+import           Common
 
 instance Arbitrary L.ByteString where
     arbitrary     = L.pack `fmap` arbitrary
@@ -34,16 +32,11 @@ instance Arbitrary QCKey where
     arbitrary = QCKey <$> arbitrary `suchThat` (not . L.null)
 
 
-pool :: Pool
-{-# NOINLINE pool #-}
-pool = unsafePerformIO $
-       create defaultClient 1 1 1
-
 t_put_get :: QCBucket -> QCKey -> L.ByteString -> Property
 t_put_get (QCBucket b) (QCKey k) v =
     monadicIO $ assert . uncurry (==) =<< run act
   where
-    act = withConnection pool $ \c -> do
+    act = withSomeConnection $ \c -> do
             p <- Just <$> B.put c b k Nothing (binary v) Default Default
             r <- B.get c b k Default
             return (p,r)
@@ -55,8 +48,8 @@ put_delete_get (QCBucket b) (QCKey k) v
         r <- run act
         assert $ isNothing r
     where
-      act = withConnection pool $ \c -> do
-              B.put c b k Nothing (binary v) Default Default
+      act = withSomeConnection $ \c -> do
+              _ <- B.put c b k Nothing (binary v) Default Default
               B.delete c b k Default
               B.get c b k Default
 
