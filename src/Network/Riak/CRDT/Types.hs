@@ -2,7 +2,8 @@
 -- 
 -- Haskell-side view of CRDT
 -- 
-{-# LANGUAGE TypeFamilies, GeneralizedNewtypeDeriving, PatternSynonyms #-}
+{-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving, DeriveGeneric #-}
+
 
 module Network.Riak.CRDT.Types (
         -- * Types
@@ -12,18 +13,24 @@ module Network.Riak.CRDT.Types (
         MapField(..),
         MapEntry(..), MapEntryTag(..), tagOf',
         MapPath(..), MapContent,
+        -- *** Modification
+        MapOp(..), MapValueOp(..),
         -- ** Counters
-        Counter(..),
+        Counter(..), Count,
+        -- *** Modification
+        CounterOp(..),
         -- ** Sets
         Set(..), setFromSeq,
+        -- *** Modification
+        SetOp(..),
         -- ** Registers
         Register(..),
+        -- *** Modification
+        RegisterOp(..),
         -- ** Flags
         Flag(..),
-        -- * Modification
-        MapOp(..), SetOp(..), CounterOp(..), FlagOp(..),
-        RegisterOp(..),
-        MapValueOp(..))
+        -- *** Modification
+        FlagOp(..))
     where
 
 
