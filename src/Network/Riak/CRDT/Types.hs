@@ -27,7 +27,7 @@ module Network.Riak.CRDT.Types (
     where
 
 
-import qualified Data.Map as M
+import qualified Data.Map.Strict as M
 import qualified Data.Set as S
 import qualified Data.Sequence as Seq
 import qualified Data.Foldable as F
@@ -36,7 +36,6 @@ import Data.Int (Int64)
 import Data.List.NonEmpty
 import Data.Semigroup
 import Data.Default.Class
-import Data.Proxy
 
 -- data Operation = MapOperation MapOp
 --                | SetOperation SetOp
@@ -49,12 +48,10 @@ import Data.Proxy
 -- types)
 data MapField = MapField MapEntryTag ByteString deriving (Eq,Ord,Show)
 
-pattern SetKey x = MapField MapSetTag x
-
 -- | CRDT Map is a Data.Map indexed by 'MapField' and holding
 -- 'MapEntry'. Maps are specials in a way that they can additionally
 -- hold 'Flag's, 'Register's, and most importantly, other 'Map's.
-newtype Map = Map (M.Map MapField MapEntry) deriving (Eq,Show)
+newtype Map = Map MapContent deriving (Eq,Show)
 
 type MapContent = M.Map MapField MapEntry
 
@@ -69,11 +66,11 @@ data MapEntryTag = MapCounterTag
                    deriving (Eq,Ord,Show)
 
 -- | CRDT Map holds values of type 'MapEntry'
-data MapEntry = MapCounter Counter
-              | MapSet Set
-              | MapRegister Register
-              | MapFlag Flag
-              | MapMap Map
+data MapEntry = MapCounter !Counter
+              | MapSet !Set
+              | MapRegister !Register
+              | MapFlag !Flag
+              | MapMap !Map
                 deriving (Eq,Show)
 
 
@@ -115,8 +112,6 @@ tagOf' MapMapOp{}      = MapMapTag
 -- | Selector (“xpath”) inside 'Map'
 newtype MapPath = MapPath (NonEmpty ByteString) deriving Show
 
-pattern MapPath_ a = MapPath a
-
 -- instance CRDT Counter where
 --     type Operation_ Counter = CounterOp
 --     modify = _
@@ -131,10 +126,10 @@ data MapOp = --MapRemove MapField           -- ^ remove value in map
              deriving Show
 
 -- | registers can be set
-data RegisterOp = RegisterSet ByteString deriving Show
+data RegisterOp = RegisterSet !ByteString deriving Show
 
 -- | flags can be enabled/disabled
-data FlagOp = FlagSet Bool deriving Show
+data FlagOp = FlagSet !Bool deriving Show
 
 -- | Flag holds a 'Bool'
 newtype Flag = Flag Bool deriving (Eq,Show)
@@ -174,11 +169,11 @@ instance Default Register where
 --     MapMapOp :: MapOp -> MapValueOp Map
 
 -- | operations on map values
-data MapValueOp = MapCounterOp CounterOp
-                | MapSetOp SetOp
-                | MapRegisterOp RegisterOp
-                | MapFlagOp FlagOp
-                | MapMapOp MapOp
+data MapValueOp = MapCounterOp !CounterOp
+                | MapSetOp !SetOp
+                | MapRegisterOp !RegisterOp
+                | MapFlagOp !FlagOp
+                | MapMapOp !MapOp
                   deriving Show
 
 
@@ -219,7 +214,7 @@ instance Monoid Counter where
 instance Default Counter where
     def = mempty
 
-data CounterOp = CounterInc Count deriving (Show)
+data CounterOp = CounterInc !Count deriving (Show)
 
 instance Monoid CounterOp where
     mempty = CounterInc 0
