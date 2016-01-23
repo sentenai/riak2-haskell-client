@@ -63,8 +63,6 @@ import GHC.Generics (Generic)
 import Network.Socket (HostName, ServiceName, Socket)
 import Text.ProtocolBuffers (ReflectDescriptor, Wire)
 
-import Network.Riak.Protocol.SearchQueryResponse -- XXX
-
 
 -- | A client identifier.  This is used by the Riak cluster when
 -- logging vector clock changes, and should be unique for each client.
@@ -176,7 +174,11 @@ data Job = JSON ByteString
 type SearchQuery = ByteString
 
 -- | Solr search result
-newtype SearchResult = SearchResult SearchQueryResponse deriving Show
+data SearchResult = SearchResult {
+      bucketType :: BucketType,
+      bucket :: Bucket,
+      key :: Key
+} deriving Show
 
 -- | List of (known to us) inbound or outbound message identifiers.
 data MessageTag = ErrorResponse
