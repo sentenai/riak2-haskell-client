@@ -215,7 +215,8 @@ prop_maps     = prop emptyVal (Proxy :: Proxy C.Map)
 tests :: TestTree
 tests = testGroup "CRDT quickCheck" [
          testProperty "counters" prop_counters,
-         testProperty "sets" prop_sets
+         testProperty "sets" prop_sets,
+         testProperty "maps" prop_maps
         ]
 
 {-

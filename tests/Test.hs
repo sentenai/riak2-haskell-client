@@ -16,6 +16,7 @@ import qualified Network.Riak.JSON            as J
 import           Network.Riak.Resolvable      (ResolvableMonoid (..))
 import           Network.Riak.Types
 import qualified Properties
+import qualified CRDTProperties               as CRDT
 import           Test.Tasty
 import           Test.Tasty.HUnit
 
@@ -27,20 +28,25 @@ tests :: TestTree
 tests = testGroup "Tests" [properties,
                            integrationalTests,
                            ping'o'death,
-                           counter,
-                           set,
-                           map_
+                           crdts
                           ]
 properties :: TestTree
-properties = testGroup "Properties" Properties.tests
+properties = testGroup "simple properties" Properties.tests
 
 integrationalTests :: TestTree
-integrationalTests = testGroup "Integrational tests"
+integrationalTests = testGroup "integrational tests"
   [ testClusterSimple
 #ifdef TEST2I
   , testIndexedPutGet
 #endif
   ]
+
+crdts :: TestTree
+crdts = testGroup "CRDT" [
+         testGroup "simple" [counter, set, map_],
+         CRDT.tests
+        ]
+
 
 testClusterSimple :: TestTree
 testClusterSimple = testCase "testClusterSimple" $ do
