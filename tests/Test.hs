@@ -11,6 +11,7 @@ import           Data.Text                    (Text)
 import qualified Network.Riak                 as Riak
 import qualified Network.Riak.Basic           as B
 import qualified Network.Riak.CRDT            as C
+import qualified Network.Riak.CRDT.Riak       as C
 import qualified Network.Riak.Cluster         as Riak
 import qualified Network.Riak.JSON            as J
 import           Network.Riak.Resolvable      (ResolvableMonoid (..))

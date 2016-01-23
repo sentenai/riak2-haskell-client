@@ -30,7 +30,9 @@ module Network.Riak.CRDT.Types (
         -- ** Flags
         Flag(..),
         -- *** Modification
-        FlagOp(..))
+        FlagOp(..),
+        -- * Re-exports
+        NonEmpty(..))
     where
 
 

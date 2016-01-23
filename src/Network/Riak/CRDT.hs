@@ -13,7 +13,7 @@
 {-# LANGUAGE TypeFamilies, OverloadedStrings, ScopedTypeVariables, PatternGuards #-}
 
 module Network.Riak.CRDT (module Network.Riak.CRDT.Types,
-                          module Network.Riak.CRDT.Riak,
+                          get,
                           CRDT(..))
     where
 
