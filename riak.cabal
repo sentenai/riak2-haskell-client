@@ -106,6 +106,8 @@ library
                 blaze-builder                 >= 0.3 && <= 0.5,
                 bytestring,
                 containers,
+                data-default-class,
+                deepseq,
                 enclosed-exceptions           >= 1.0.1.1 && <= 1.1,
                 exceptions                    >= 0.8.0.2 && <= 0.9,
                 hashable                      >= 1.2.3,
@@ -119,12 +121,11 @@ library
                 random,
                 random-shuffle                >= 0.0.4 && < 0.1,
                 riak-protobuf                 == 0.21.*,
+                semigroups,
                 text                          == 1.2.*,
                 time                          >= 1.4.2 && < 1.6,
                 vector                        >= 0.10.12.3 && < 0.12,
-                unordered-containers          >= 0.2.5,
-                semigroups,
-                data-default-class
+                unordered-containers          >= 0.2.5
 
 
   if flag(debug)

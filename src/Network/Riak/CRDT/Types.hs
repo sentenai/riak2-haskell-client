@@ -43,6 +43,8 @@ import Data.Int (Int64)
 import Data.List.NonEmpty
 import Data.Semigroup
 import Data.Default.Class
+import Control.DeepSeq (NFData)
+import GHC.Generics (Generic)
 
 -- data Operation = MapOperation MapOp
 --                | SetOperation SetOp
@@ -53,12 +55,16 @@ import Data.Default.Class
 -- | CRDT Map is indexed by MapField, which is a name tagged by a type
 -- (there may be different entries with the same name, but different
 -- types)
-data MapField = MapField MapEntryTag ByteString deriving (Eq,Ord,Show)
+data MapField = MapField MapEntryTag ByteString deriving (Eq,Ord,Show,Generic)
+
+instance NFData MapField
 
 -- | CRDT Map is a Data.Map indexed by 'MapField' and holding
 -- 'MapEntry'. Maps are specials in a way that they can additionally
 -- hold 'Flag's, 'Register's, and most importantly, other 'Map's.
-newtype Map = Map MapContent deriving (Eq,Show)
+newtype Map = Map MapContent deriving (Eq,Show,Generic)
+
+instance NFData Map
 
 type MapContent = M.Map MapField MapEntry
 
@@ -70,7 +76,9 @@ data MapEntryTag = MapCounterTag
                  | MapRegisterTag
                  | MapFlagTag
                  | MapMapTag
-                   deriving (Eq,Ord,Show)
+                   deriving (Eq,Ord,Show,Generic)
+
+instance NFData MapEntryTag
 
 -- | CRDT Map holds values of type 'MapEntry'
 data MapEntry = MapCounter !Counter
@@ -78,9 +86,9 @@ data MapEntry = MapCounter !Counter
               | MapRegister !Register
               | MapFlag !Flag
               | MapMap !Map
-                deriving (Eq,Show)
+                deriving (Eq,Show,Generic)
 
-
+instance NFData MapEntry
 
 
 -- data ME = MESet Set | MECounter Counter
@@ -139,7 +147,9 @@ data RegisterOp = RegisterSet !ByteString deriving Show
 data FlagOp = FlagSet !Bool deriving Show
 
 -- | Flag holds a 'Bool'
-newtype Flag = Flag Bool deriving (Eq,Show)
+newtype Flag = Flag Bool deriving (Eq,Ord,Show,Generic)
+
+instance NFData Flag
 
 -- | Last-wins monoid for 'Flag'
 instance Monoid Flag where
@@ -154,7 +164,9 @@ instance Default Flag where
     def = mempty
 
 -- | Register holds a 'ByteString'
-newtype Register = Register ByteString deriving (Eq,Show)
+newtype Register = Register ByteString deriving (Eq,Show,Generic)
+
+instance NFData Register
 
 -- | Last-wins monoid for 'Register'
 instance Monoid Register where
@@ -184,14 +196,20 @@ data MapValueOp = MapCounterOp !CounterOp
                   deriving Show
 
 
--- | CRDT ADT. 'Network.Riak.CRDT.Riak.get' operations return value of this type
+-- | CRDT ADT.
+-- 
+-- 'Network.Riak.CRDT.Riak.get' operations return value of this type
 data DataType = DTCounter Counter
               | DTSet Set
               | DTMap Map
-                deriving (Eq,Show)
+                deriving (Eq,Show,Generic)
+
+instance NFData DataType
 
 -- | CRDT Set is a Data.Set
-newtype Set = Set (S.Set ByteString) deriving (Eq,Show,Monoid)
+newtype Set = Set (S.Set ByteString) deriving (Eq,Ord,Show,Generic,Monoid)
+
+instance NFData Set
 
 instance Semigroup Set where
     Set a <> Set b = Set (a <> b)
@@ -208,8 +226,10 @@ setFromSeq :: Seq.Seq ByteString -> Set
 setFromSeq = Set . S.fromList . F.toList
 
 -- | CRDT Counter hold a integer 'Count'
-newtype Counter = Counter Count deriving (Eq,Show)
+newtype Counter = Counter Count deriving (Eq,Ord,Num,Show,Generic)
 type Count = Int64
+
+instance NFData Counter
 
 instance Semigroup Counter where
     Counter a <> Counter b = Counter . getSum $ Sum a <> Sum b
