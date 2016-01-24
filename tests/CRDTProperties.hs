@@ -121,6 +121,10 @@ instance Action C.Map where
     updateCreates _ (C.MapUpdate _ (C.MapSetOp C.SetRemove{})) = False
     updateCreates _ _                                          = True
 
+
+-- | Many Arbitrary instances.
+-- TODO: 'Generic' arbitrary
+
 instance (Arbitrary a, Arbitrary (C.Operation_ a)) => Arbitrary (Op a) where
     arbitrary = oneof [
                  CGet <$> arbitrary <*> arbitrary,
@@ -162,47 +166,62 @@ instance Arbitrary C.MapValueOp where
 instance Arbitrary C.Map
 
 
-riak :: forall a. Action a => a -> Proxy a
-     -> [Op a] -> RWST () [Maybe C.DataType] B.Connection IO ()
+-- | Abstract machine
+machine :: (MonadWriter [Maybe C.DataType] m,
+            MonadState s m,
+            Applicative m,
+            Action t)
+        => t -> Proxy t -> [Op t]
+        -> (Op t -> s -> m (Either (Maybe C.DataType) s)) -> m ()
 
-riak _ _ [] = pure ()
+machine _ _ [] _ = pure ()
 
-riak v p (CGet (Bucket b) (Key k) : as) = do
-  c <- get
-  r <- liftIO $ C.get c (bucketType p) b k
+machine x p (a@CGet{} : as) onAct = do
+  v <- get
+  Left r <- onAct a v
   tell [r]
-  riak v p as
+  machine x p as onAct
 
-riak v p (CUpdate (Bucket b) (Key k) op : as) = do
-  c <- get
-  liftIO $ C.sendModify c (bucketType p) b k v [op]
-  riak v p as
+machine x p (a@CUpdate{} : as) onAct = do
+  v <- get
+  Right r <- onAct a v
+  put r
+  machine x p as onAct
 
 
-doRiak v p ops = withSomeConnection $ \conn -> do
-                   --print ops
-                   (_,_,r) <- runRWST (riak v p ops) () conn
-                   pure r
 
-doPure :: Action a => RiakState
-       -> a -> Proxy a -> [Op a] -> PropertyM IO [Maybe C.DataType]
-doPure stat v p ops = do (_,_,r) <- runRWST (pure_ v p ops) () stat
-                         pure r
+-- | Riak version of the 'machine'.
+-- State is 'B.Connection', get/update are IO-requests to riak.
+riak :: (MonadWriter [Maybe C.DataType] m,
+         MonadState B.Connection m,
+         Applicative m, MonadIO m,
+         Action t)
+      => t -> Proxy t -> [Op t] -> m ()
 
-pure_ :: Action a => a -> Proxy a
-       -> [Op a] -> RWST () [Maybe C.DataType] RiakState (PropertyM IO) ()
+riak x p ops = machine x p ops onAct
+    where onAct (CGet (Bucket b) (Key k)) c
+              = liftIO $ Left <$> C.get c bt b k
+          onAct (CUpdate (Bucket b) (Key k) op) c
+              = do liftIO $ C.sendModify c bt b k x [op]
+                   pure $ Right c
+          bt = bucketType p
 
-pure_ _ _ [] = pure ()
 
-pure_ x p (CGet b k : as) = do
-  v <- gets (Map.lookup (Point (BucketType (bucketType p)) b k))
-  tell [v]
-  pure_ x p as
 
-pure_ x p (CUpdate b k op : as) = do
-  modify (Map.alter (update x op)
-                    (Point (BucketType (bucketType p)) b k))
-  pure_ x p as
+-- | Haskell emulation version of the 'machine'.
+-- State is 'RiakState', get/update try to match riak's behaviour.
+pure_ :: (MonadWriter [Maybe C.DataType] m,
+          MonadState RiakState m,
+          Applicative m,
+          Action t)
+      => t -> Proxy t -> [Op t] -> m ()
+
+pure_ x p ops = machine x p ops onAct
+    where
+      onAct (CGet b k) v       = pure . Left $ Map.lookup (point b k) v
+      onAct (CUpdate b k op) v = pure . Right $ Map.alter (update x op) (point b k) v
+      point b k = Point (BucketType (bucketType p)) b k
+
 
 
 update :: forall a. (Action a) => a -> C.Operation_ a -> Maybe C.DataType -> Maybe C.DataType
@@ -217,6 +236,21 @@ update z op Nothing
 update z op (Just dt) = Just . toDT . C.modify op . fromDT' $ dt
     where fromDT' :: C.DataType -> a
           fromDT' = fromDT
+
+
+
+doRiak :: Action a =>
+          a -> Proxy a -> [Op a] -> IO [Maybe C.DataType]
+doRiak v p ops = withSomeConnection $ \conn -> do
+                   --print ops
+                   (_,_,r) <- runRWST (riak v p ops) () conn
+                   pure r
+
+doPure :: Action a => RiakState
+       -> a -> Proxy a -> [Op a] -> PropertyM IO [Maybe C.DataType]
+doPure stat v p ops = do (_,_,r) <- runRWST (pure_ v p ops) () stat
+                         pure r
+
 
 
 
