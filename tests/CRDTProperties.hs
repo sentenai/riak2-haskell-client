@@ -171,22 +171,22 @@ machine :: (MonadWriter [Maybe C.DataType] m,
             MonadState s m,
             Applicative m,
             Action t op)
-        => t -> Proxy t -> [Op t op]
+        => Proxy t -> [Op t op]
         -> (Op t op -> s -> m (Either (Maybe C.DataType) s)) -> m ()
 
-machine _ _ [] _ = pure ()
+machine _ [] _ = pure ()
 
-machine x p (a@CGet{} : as) onAct = do
+machine p (a@CGet{} : as) onAct = do
   v <- get
   Left r <- onAct a v
   tell [r]
-  machine x p as onAct
+  machine p as onAct
 
-machine x p (a@CUpdate{} : as) onAct = do
+machine p (a@CUpdate{} : as) onAct = do
   v <- get
   Right r <- onAct a v
   put r
-  machine x p as onAct
+  machine p as onAct
 
 
 
@@ -196,9 +196,9 @@ riak :: (MonadWriter [Maybe C.DataType] m,
          MonadState B.Connection m,
          Applicative m, MonadIO m,
          Action t op)
-      => t -> Proxy t -> [Op t op] -> m ()
+      => Proxy t -> [Op t op] -> m ()
 
-riak x p ops = machine x p ops onAct
+riak p ops = machine p ops onAct
     where onAct (CGet (Bucket b) (Key k)) c
               = liftIO $ Left <$> C.get c bt b k
           onAct (CUpdate (Bucket b) (Key k) op) c
@@ -214,60 +214,61 @@ pure_ :: (MonadWriter [Maybe C.DataType] m,
           MonadState RiakState m,
           Applicative m,
           Action t op)
-      => t -> Proxy t -> [Op t op] -> m ()
+      => Proxy t -> [Op t op] -> m ()
 
-pure_ x p ops = machine x p ops onAct
+pure_ p ops = machine p ops onAct
     where
       onAct (CGet b k) v       = pure . Left $ Map.lookup (point b k) v
-      onAct (CUpdate b k op) v = pure . Right $ Map.alter (update x op) (point b k) v
+      onAct (CUpdate b k op) v = pure . Right $ Map.alter (update op) (point b k) v
       point b k = Point (BucketType (bucketType p)) b k
 
 
 
 update :: forall a op. (Action a op) =>
-          a -> op -> Maybe C.DataType -> Maybe C.DataType
-update z op Nothing
+          op -> Maybe C.DataType -> Maybe C.DataType
+update op Nothing
        | updateCreates (Proxy :: Proxy a) op
-           = update z op (Just . toDT' $ def) -- it's ok to update non-set value
-                                              -- in riak's mind
+           = update op (Just . toDT' $ def) -- it's sometimes ok to
+                                            -- update a non-set value
+                                            -- in riak's mind
        | otherwise
            = Nothing
              where toDT' :: a -> C.DataType
                    toDT' = toDT
-update z op (Just dt) = Just . toDT . C.modify op . fromDT' $ dt
+update op (Just dt) = Just . toDT . C.modify op . fromDT' $ dt
     where fromDT' :: C.DataType -> a
           fromDT' = fromDT
 
 
 
 doRiak :: Action a op =>
-          a -> Proxy a -> [Op a op] -> IO [Maybe C.DataType]
-doRiak v p ops = withSomeConnection $ \conn -> do
+          Proxy a -> [Op a op] -> IO [Maybe C.DataType]
+doRiak p ops = withSomeConnection $ \conn -> do
                    --print ops
-                   (_,_,r) <- runRWST (riak v p ops) () conn
+                   (_,_,r) <- runRWST (riak p ops) () conn
                    pure r
 
 doPure :: Action a op =>
-          RiakState -> a -> Proxy a -> [Op a op] -> PropertyM IO [Maybe C.DataType]
-doPure stat v p ops = do (_,_,r) <- runRWST (pure_ v p ops) () stat
-                         pure r
+          RiakState -> Proxy a -> [Op a op] -> PropertyM IO [Maybe C.DataType]
+doPure stat p ops = do (_,_,r) <- runRWST (pure_ p ops) () stat
+                       pure r
 
 
 
 
 prop :: (Show op, Action a op) =>
-        a -> Proxy a -> [Op a op] -> Property
-prop v p ops = monadicIO $ do
+        Proxy a -> [Op a op] -> Property
+prop p ops = monadicIO $ do
                           stat <- run $ observeRiak p
-                          r1 <- doPure stat v p ops
-                          r2 <- run $ doRiak v p ops
+                          r1 <- doPure stat p ops
+                          r2 <- run $ doRiak p ops
                           run . when (r1/=r2) $ print (r1,r2)
                           assert $ r1 == r2
 
 
-prop_counters = prop def (Proxy :: Proxy C.Counter)
-prop_sets     = prop def (Proxy :: Proxy C.Set)
-prop_maps     = prop def (Proxy :: Proxy C.Map)
+prop_counters = prop (Proxy :: Proxy C.Counter)
+prop_sets     = prop (Proxy :: Proxy C.Set)
+prop_maps     = prop (Proxy :: Proxy C.Map)
 
 
 
