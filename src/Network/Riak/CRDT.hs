@@ -1,15 +1,33 @@
--- | Module: Network.Riak.CRDT
--- 
--- CRDT operations
--- 
--- * Haskell values: 'Counter', 'Set' etc
--- 
--- * ADT for operations: 'CounterOp', 'SetOp' etc
--- 
--- * Pure modify* functions
--- 
--- * Functions asking current value and functions asking Riak to apply
--- operations
+{- | Module: Network.Riak.CRDT
+
+CRDT operations
+
+* Haskell-side
+
+    * Haskell values: 'Counter', 'Set' etc
+    
+    * ADT for operations: 'CounterOp', 'SetOp' etc
+    
+    * 'modify' to locally modify a value (matching riak behaviour)
+
+* Riak-side
+
+    * 'get' to get a current value
+    
+    * 'sendModify' to ask Riak to apply modifications
+
+TL;DR example
+
+>>> let c = Counter 41
+>>> let op = CounterInc 1
+>>> modify op c
+Counter 42
+>>> get conn "counters" "bucket" "key"
+Just (DTCounter (Counter 41))
+>>> sendModify conn "counters" "bucket" "key" [op] >> get conn "counters" "bucket" "key"
+Just (DTCounter (Counter 42))
+
+-}
 {-# LANGUAGE TypeFamilies, OverloadedStrings, ScopedTypeVariables, PatternGuards #-}
 {-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
 
