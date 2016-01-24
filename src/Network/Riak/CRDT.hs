@@ -11,6 +11,7 @@
 -- * Functions asking current value and functions asking Riak to apply
 -- operations
 {-# LANGUAGE TypeFamilies, OverloadedStrings, ScopedTypeVariables, PatternGuards #-}
+{-# LANGUAGE MultiParamTypeClasses, FunctionalDependencies #-}
 
 module Network.Riak.CRDT (module Network.Riak.CRDT.Types,
                           get,
@@ -62,9 +63,7 @@ modifyMap1 (MapPath (e :| (r:rs))) op (Map m')
 
 modMap :: MapField -> MapValueOp -> Map -> Map
 --modMap ix Nothing (Map m) = Map $ M.delete ix m
-modMap ix op (Map m) = Map $ M.alter alterBy ix m
-    where
-      alterBy v = Just . modifyMapValue op $ v
+modMap ix op (Map m) = Map $ M.alter (Just . modifyMapValue op) ix m
 
 
 modifyMapValue :: MapValueOp -> Maybe MapEntry -> MapEntry
@@ -134,30 +133,25 @@ instance MapCRDT Map where
 
 
 -- | CRDT types
-class MapCRDT a => CRDT a where
-    type Operation_ a :: *
-
+class MapCRDT a => CRDT a op | a -> op, op -> a where
     -- | Modify a value by applying an operation
-    modify :: Operation_ a -> a -> a
+    modify :: op -> a -> a
 
     -- | Request riak a modification
     sendModify :: Connection
                -> BucketType -> Bucket -> Key
-               -> a -> [Operation_ a] -> IO ()
+               -> [op] -> IO ()
 
-instance CRDT Counter where
-    type Operation_ Counter = CounterOp
+instance CRDT Counter CounterOp where
     modify = modifyCounter
-    sendModify c t b k _ o = counterUpdate c t b k o
+    sendModify = counterUpdate
 
-instance CRDT Set where
-    type Operation_ Set = SetOp
+instance CRDT Set SetOp where
     modify = modifySet
-    sendModify c t b k _ o = setUpdate c t b k o
+    sendModify = setUpdate
 
-instance CRDT Map where
-    type Operation_ Map = MapOp
+instance CRDT Map MapOp where
     modify = modifyMap
-    sendModify c t b k _ o = mapUpdate c t b k o
+    sendModify = mapUpdate
 
 

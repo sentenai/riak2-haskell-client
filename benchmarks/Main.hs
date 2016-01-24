@@ -13,7 +13,7 @@ import Data.Maybe
 import Data.String
 import qualified Data.List.NonEmpty as NEL
 import Data.Semigroup
-import Data.Default.Class
+
 
 main :: IO ()
 main = benchmarks >>= defaultMain
@@ -40,7 +40,7 @@ setup pool = Pool.withConnection pool $ \c -> do
                setupMapN_nest c "100-depth" 100
                setupMapN_nest c "1000-depth" 1000
 
-               sendModify c "counters" bucket "__setup" (mempty::Counter) [CounterInc 1]
+               sendModify c "counters" bucket "__setup" [CounterInc 1]
                putStrLn "Bench env set up."
 
 
@@ -56,19 +56,19 @@ nestedMapPath n = MapPath . NEL.fromList $ [ fromString (show i) | i <- [1..n] ]
 
 
 setupSetN c key n = sequence_ [
-                     sendModify c "sets" bucket key (mempty::Set) [SetAdd (B.pack $ show i)]
+                     sendModify c "sets" bucket key [SetAdd (B.pack $ show i)]
                          | i <- [1..n]
                     ]
 
 -- | n-elem map with counters
-setupMapN_elem c key n = sendModify c "maps" bucket key (def::Map) ops
+setupMapN_elem c key n = sendModify c "maps" bucket key ops
     where ops = [MapUpdate (MapPath $ (fromString $ show i) :| [])
                            (MapCounterOp $ CounterInc 1)
                   | i <- [1..n]
                 ]
 
 -- | n-depth map with a counter
-setupMapN_nest c key n = sendModify c "maps" bucket key (def::Map) [op]
+setupMapN_nest c key n = sendModify c "maps" bucket key [op]
     where op = MapUpdate (nestedMapPath n)
                          (MapCounterOp $ CounterInc 1)
 
@@ -121,7 +121,7 @@ getSet10 c   = get c "sets" bucket "10"
 getSet100 c  = get c "sets" bucket "100"
 getSet1000 c = get c "sets" bucket "1000"
 
-set1kAddRemove c = sequence_ [ sendModify c "sets" bucket "1000" (mempty::Set) [o]
+set1kAddRemove c = sequence_ [ sendModify c "sets" bucket "1000" [o]
                                | o <- [SetAdd "foo", SetRemove "foo"] ]
 
 get1Map c = get c "maps" bucket "1"

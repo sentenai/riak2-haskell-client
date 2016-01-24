@@ -1,5 +1,5 @@
 {-# LANGUAGE OverloadedStrings, FlexibleContexts, TupleSections, ScopedTypeVariables,
-  GADTs, StandaloneDeriving, UndecidableInstances, PatternGuards #-}
+    GADTs, StandaloneDeriving, UndecidableInstances, PatternGuards, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}
 module CRDTProperties (prop_counters,
                        prop_sets,
@@ -65,7 +65,7 @@ type RiakState = Map.Map Point C.DataType
 -- As it turns out, observeRiak is not quite cheap operation after
 -- /types/maps/… are populated. So first argument is proxy for the
 -- (only) type we are interested in.
-observeRiak :: Action a => Proxy a -> IO RiakState
+observeRiak :: Action a op => Proxy a -> IO RiakState
 observeRiak p = Map.fromList . catMaybes <$> observeRiak' (BucketType $ bucketType p)
 
 observeRiak' :: BucketType -> IO [Maybe (Point, C.DataType)]
@@ -79,13 +79,13 @@ observeRiak' bt@(BucketType t_) = withSomeConnection $ \c ->
 
 -- | We will supply a list of these operations:
 -- 
--- For each CRDT a => a,
-data Op a = CGet Bucket Key                     -- ^ we can get a value
-          | CUpdate Bucket Key (C.Operation_ a) -- ^ we can update a value
+-- For each Action a op => a,
+data Op a op = CGet Bucket Key       -- ^ we can get a value
+             | CUpdate Bucket Key op -- ^ we can update a value
 
-deriving instance (Show (C.Operation_ a), C.CRDT a) => Show (Op a)
+deriving instance (Show op, C.CRDT a o) => Show (Op a op)
 
-class (Show t, C.CRDT t, Default t) => Action t where
+class (Show t, C.CRDT t op, Default t) => Action t op where
     -- | bucket type for this type (assumed/hardcoded)
     bucketType :: Proxy t -> ByteString
     -- | extract a value from 'C.DataType', or throw an error
@@ -95,17 +95,17 @@ class (Show t, C.CRDT t, Default t) => Action t where
     -- | a kludge: if there's no value at the moment, having been
     -- provieded with an op, will riak create and operate on a empty
     -- value?
-    updateCreates :: Proxy t -> C.Operation_ t -> Bool
+    updateCreates :: Proxy t -> op -> Bool
 
 
-instance Action C.Counter where
+instance Action C.Counter C.CounterOp where
     bucketType _ = "counters"
     fromDT (C.DTCounter c) = c
     fromDT _               = error "expected counter" -- ok for tests
     toDT = C.DTCounter
     updateCreates _ _ = True
 
-instance Action C.Set where
+instance Action C.Set C.SetOp where
     bucketType _ = "sets"
     fromDT (C.DTSet c) = c
     fromDT _           = error "expected set"
@@ -113,7 +113,7 @@ instance Action C.Set where
     updateCreates _ C.SetAdd{}    = True
     updateCreates _ C.SetRemove{} = False
 
-instance Action C.Map where
+instance Action C.Map C.MapOp where
     bucketType _ = "maps"
     fromDT (C.DTMap c) = c
     fromDT _           = error "expected map"
@@ -125,7 +125,7 @@ instance Action C.Map where
 -- | Many Arbitrary instances.
 -- TODO: 'Generic' arbitrary
 
-instance (Arbitrary a, Arbitrary (C.Operation_ a)) => Arbitrary (Op a) where
+instance (Arbitrary a, Arbitrary op) => Arbitrary (Op a op) where
     arbitrary = oneof [
                  CGet <$> arbitrary <*> arbitrary,
                  CUpdate <$> arbitrary <*> arbitrary <*> arbitrary
@@ -170,9 +170,9 @@ instance Arbitrary C.Map
 machine :: (MonadWriter [Maybe C.DataType] m,
             MonadState s m,
             Applicative m,
-            Action t)
-        => t -> Proxy t -> [Op t]
-        -> (Op t -> s -> m (Either (Maybe C.DataType) s)) -> m ()
+            Action t op)
+        => t -> Proxy t -> [Op t op]
+        -> (Op t op -> s -> m (Either (Maybe C.DataType) s)) -> m ()
 
 machine _ _ [] _ = pure ()
 
@@ -195,14 +195,14 @@ machine x p (a@CUpdate{} : as) onAct = do
 riak :: (MonadWriter [Maybe C.DataType] m,
          MonadState B.Connection m,
          Applicative m, MonadIO m,
-         Action t)
-      => t -> Proxy t -> [Op t] -> m ()
+         Action t op)
+      => t -> Proxy t -> [Op t op] -> m ()
 
 riak x p ops = machine x p ops onAct
     where onAct (CGet (Bucket b) (Key k)) c
               = liftIO $ Left <$> C.get c bt b k
           onAct (CUpdate (Bucket b) (Key k) op) c
-              = do liftIO $ C.sendModify c bt b k x [op]
+              = do liftIO $ C.sendModify c bt b k [op]
                    pure $ Right c
           bt = bucketType p
 
@@ -213,8 +213,8 @@ riak x p ops = machine x p ops onAct
 pure_ :: (MonadWriter [Maybe C.DataType] m,
           MonadState RiakState m,
           Applicative m,
-          Action t)
-      => t -> Proxy t -> [Op t] -> m ()
+          Action t op)
+      => t -> Proxy t -> [Op t op] -> m ()
 
 pure_ x p ops = machine x p ops onAct
     where
@@ -224,7 +224,8 @@ pure_ x p ops = machine x p ops onAct
 
 
 
-update :: forall a. (Action a) => a -> C.Operation_ a -> Maybe C.DataType -> Maybe C.DataType
+update :: forall a op. (Action a op) =>
+          a -> op -> Maybe C.DataType -> Maybe C.DataType
 update z op Nothing
        | updateCreates (Proxy :: Proxy a) op
            = update z op (Just . toDT' $ def) -- it's ok to update non-set value
@@ -239,22 +240,23 @@ update z op (Just dt) = Just . toDT . C.modify op . fromDT' $ dt
 
 
 
-doRiak :: Action a =>
-          a -> Proxy a -> [Op a] -> IO [Maybe C.DataType]
+doRiak :: Action a op =>
+          a -> Proxy a -> [Op a op] -> IO [Maybe C.DataType]
 doRiak v p ops = withSomeConnection $ \conn -> do
                    --print ops
                    (_,_,r) <- runRWST (riak v p ops) () conn
                    pure r
 
-doPure :: Action a => RiakState
-       -> a -> Proxy a -> [Op a] -> PropertyM IO [Maybe C.DataType]
+doPure :: Action a op =>
+          RiakState -> a -> Proxy a -> [Op a op] -> PropertyM IO [Maybe C.DataType]
 doPure stat v p ops = do (_,_,r) <- runRWST (pure_ v p ops) () stat
                          pure r
 
 
 
 
-prop :: (Show (C.Operation_ a), Action a) => a -> Proxy a -> [Op a] -> Property
+prop :: (Show op, Action a op) =>
+        a -> Proxy a -> [Op a op] -> Property
 prop v p ops = monadicIO $ do
                           stat <- run $ observeRiak p
                           r1 <- doPure stat v p ops
