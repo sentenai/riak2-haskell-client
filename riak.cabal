@@ -176,6 +176,9 @@ benchmark bench
     base,
     riak,
     criterion,
-    bytestring
+    bytestring,
+    data-default-class,
+    semigroups
+
 
 
