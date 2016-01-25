@@ -31,7 +31,7 @@ module Network.Riak.CRDT.Types (
         -- *** Modification
         FlagOp(..),
         -- * Misc
-        NonEmpty(..), tagOf', setFromSeq, MapEntryTag(..))
+        NonEmpty(..), mapEntryTag, setFromSeq, MapEntryTag(..))
     where
 
 
@@ -90,12 +90,12 @@ data MapEntry = MapCounter !Counter
 instance NFData MapEntry
 
 
-tagOf' :: MapValueOp -> MapEntryTag
-tagOf' MapCounterOp{}  = MapCounterTag
-tagOf' MapSetOp{}      = MapSetTag
-tagOf' MapRegisterOp{} = MapRegisterTag
-tagOf' MapFlagOp{}     = MapFlagTag
-tagOf' MapMapOp{}      = MapMapTag
+mapEntryTag :: MapValueOp -> MapEntryTag
+mapEntryTag MapCounterOp{}  = MapCounterTag
+mapEntryTag MapSetOp{}      = MapSetTag
+mapEntryTag MapRegisterOp{} = MapRegisterTag
+mapEntryTag MapFlagOp{}     = MapFlagTag
+mapEntryTag MapMapOp{}      = MapMapTag
 
 
 -- | Selector (“xpath”) inside 'Map'

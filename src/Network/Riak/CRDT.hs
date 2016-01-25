@@ -71,7 +71,7 @@ modifyMap (MapUpdate path op) m = modifyMap1 path op m
 
 modifyMap1 :: MapPath -> MapValueOp -> Map -> Map
 modifyMap1 (MapPath (e :| [])) op m = modMap mf op m
-    where mf = MapField (tagOf' op) e
+    where mf = MapField (mapEntryTag op) e
 modifyMap1 (MapPath (e :| (r:rs))) op (Map m')
     = Map $ M.alter (Just . f) (MapField MapMapTag e) m'
       where f :: Maybe MapEntry -> MapEntry

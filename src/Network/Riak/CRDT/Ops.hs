@@ -76,7 +76,7 @@ mapOpPB ops = PBMap.MapOp rems updates
 
 
 toUpdate :: MapPath -> MapValueOp -> PBMap.MapUpdate
-toUpdate (MapPath (e :| [])) op     = toUpdate' e (tagOf' op) op
+toUpdate (MapPath (e :| [])) op     = toUpdate' e (mapEntryTag op) op
 toUpdate (MapPath (e :| (r:rs))) op = toUpdate' e MapMapTag op'
     where op' = MapMapOp (MapUpdate (MapPath (r:|rs)) op)
 
