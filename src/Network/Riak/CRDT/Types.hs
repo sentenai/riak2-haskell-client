@@ -99,7 +99,7 @@ tagOf' MapMapOp{}      = MapMapTag
 
 
 -- | Selector (“xpath”) inside 'Map'
-newtype MapPath = MapPath (NonEmpty ByteString) deriving Show
+newtype MapPath = MapPath (NonEmpty ByteString) deriving (Eq,Show)
 
 
 -- | map operations
@@ -109,7 +109,7 @@ newtype MapPath = MapPath (NonEmpty ByteString) deriving Show
 -- MapUpdate (MapPath ("x" :| ["y","z"])) (MapCounterOp (CounterInc 1))
 data MapOp = --MapRemove MapField           -- ^ remove value in map
              MapUpdate MapPath MapValueOp   -- ^ update value on path by operation
-    deriving Show
+    deriving (Eq,Show)
 
 
 -- | Polymprhic version of MapOp for nicer syntax
@@ -141,12 +141,12 @@ infixr 5 `mapUpdate`
 -- | Registers can be set to a value
 -- 
 -- >>> RegisterSet "foo"
-data RegisterOp = RegisterSet !ByteString deriving Show
+data RegisterOp = RegisterSet !ByteString deriving (Eq,Show)
 
 -- | Flags can be enabled / disabled
 -- 
 -- >>> FlagSet True
-data FlagOp = FlagSet !Bool deriving Show
+data FlagOp = FlagSet !Bool deriving (Eq,Show)
 
 -- | Flags can only be held as a 'Map' element.
 -- 
@@ -195,7 +195,7 @@ data MapValueOp = MapCounterOp !CounterOp
                 | MapRegisterOp !RegisterOp
                 | MapFlagOp !FlagOp
                 | MapMapOp !MapOp
-                  deriving Show
+                  deriving (Eq,Show)
 
 
 -- | CRDT ADT.
@@ -228,7 +228,7 @@ data SetOp = SetAdd ByteString    -- ^ add element to the set
            | SetRemove ByteString -- ^ remove element from the set
                                   -- 
                                   -- >>> SetRemove "bar"
-             deriving Show
+             deriving (Eq,Show)
 
 setFromSeq :: Seq.Seq ByteString -> Set
 setFromSeq = Set . S.fromList . F.toList
@@ -254,7 +254,7 @@ instance Default Counter where
 -- | Counters can be incremented/decremented
 -- 
 -- >>> CounterInc 1
-data CounterOp = CounterInc !Count deriving (Show)
+data CounterOp = CounterInc !Count deriving (Eq,Show)
 
 instance Monoid CounterOp where
     mempty = CounterInc 0
