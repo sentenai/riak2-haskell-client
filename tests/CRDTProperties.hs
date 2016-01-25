@@ -20,7 +20,6 @@ import Data.List.NonEmpty
 import qualified Data.Map as Map
 import qualified Data.Set as Set
 import Control.Monad.RWS
-import Control.Exception (bracket)
 import Data.Default.Class
 import Data.Proxy
 
@@ -80,8 +79,8 @@ observeRiak' bt@(BucketType t_) = withSomeConnection $ \c ->
 -- | We will supply a list of these operations:
 -- 
 -- For each Action a op => a,
-data Op a op = CGet Bucket Key       -- ^ we can get a value
-             | CUpdate Bucket Key op -- ^ we can update a value
+data Op a op = Get Bucket Key       -- ^ we can get a value
+             | Update Bucket Key op -- ^ we can update a value
 
 deriving instance (Show op, C.CRDT a o) => Show (Op a op)
 
@@ -127,8 +126,8 @@ instance Action C.Map C.MapOp where
 
 instance (Arbitrary a, Arbitrary op) => Arbitrary (Op a op) where
     arbitrary = oneof [
-                 CGet <$> arbitrary <*> arbitrary,
-                 CUpdate <$> arbitrary <*> arbitrary <*> arbitrary
+                 Get <$> arbitrary <*> arbitrary,
+                 Update <$> arbitrary <*> arbitrary <*> arbitrary
                 ]
 
 instance Arbitrary C.Counter where
@@ -166,7 +165,8 @@ instance Arbitrary C.MapValueOp where
 instance Arbitrary C.Map
 
 
--- | Abstract machine
+-- | Abstract machine.
+-- Yields a value on 'Get', modifies state on 'Update'.
 machine :: (MonadWriter [Maybe C.DataType] m,
             MonadState s m,
             Applicative m,
@@ -176,13 +176,13 @@ machine :: (MonadWriter [Maybe C.DataType] m,
 
 machine _ [] _ = pure ()
 
-machine p (a@CGet{} : as) onAct = do
+machine p (a@Get{} : as) onAct = do
   v <- get
   Left r <- onAct a v
   tell [r]
   machine p as onAct
 
-machine p (a@CUpdate{} : as) onAct = do
+machine p (a@Update{} : as) onAct = do
   v <- get
   Right r <- onAct a v
   put r
@@ -199,9 +199,9 @@ riak :: (MonadWriter [Maybe C.DataType] m,
       => Proxy t -> [Op t op] -> m ()
 
 riak p ops = machine p ops onAct
-    where onAct (CGet (Bucket b) (Key k)) c
+    where onAct (Get (Bucket b) (Key k)) c
               = liftIO $ Left <$> C.get c bt b k
-          onAct (CUpdate (Bucket b) (Key k) op) c
+          onAct (Update (Bucket b) (Key k) op) c
               = do liftIO $ C.sendModify c bt b k [op]
                    pure $ Right c
           bt = bucketType p
@@ -218,8 +218,8 @@ pure_ :: (MonadWriter [Maybe C.DataType] m,
 
 pure_ p ops = machine p ops onAct
     where
-      onAct (CGet b k) v       = pure . Left $ Map.lookup (point b k) v
-      onAct (CUpdate b k op) v = pure . Right $ Map.alter (update op) (point b k) v
+      onAct (Get b k) v       = pure . Left $ Map.lookup (point b k) v
+      onAct (Update b k op) v = pure . Right $ Map.alter (update op) (point b k) v
       point b k = Point (BucketType (bucketType p)) b k
 
 
