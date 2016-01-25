@@ -140,7 +140,34 @@ newtype MapPath = MapPath (NonEmpty ByteString) deriving Show
 -- | map operations
 data MapOp = --MapRemove MapField           -- ^ remove value in map
              MapUpdate MapPath MapValueOp   -- ^ update value on path by operation
-             deriving Show
+    deriving Show
+
+
+-- | polymprhic version of MapOp for nicer syntax
+data MapOp_ op = --MapRemove MapField
+                 MapUpdate_ MapPath op
+    deriving Show
+
+
+instance IsString MapPath where
+    fromString s = MapPath (fromString s :| [])
+
+(-/) :: ByteString -> MapPath -> MapPath
+e -/ (MapPath p) = MapPath (e <| p)
+
+infixr 6 -/
+
+class IsMapOp op where toValueOp :: op -> MapValueOp
+instance IsMapOp CounterOp  where toValueOp = MapCounterOp
+instance IsMapOp FlagOp     where toValueOp = MapFlagOp
+instance IsMapOp RegisterOp where toValueOp = MapRegisterOp
+instance IsMapOp SetOp      where toValueOp = MapSetOp
+
+
+mapUpdate :: IsMapOp o => MapPath -> o -> MapOp
+p `mapUpdate` op = MapUpdate p (toValueOp op)
+
+infixr 5 `mapUpdate`
 
 -- | registers can be set
 data RegisterOp = RegisterSet !ByteString deriving Show

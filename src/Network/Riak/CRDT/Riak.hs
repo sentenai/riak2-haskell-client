@@ -12,19 +12,19 @@ import qualified Network.Riak.CRDT.Request as Req
 import qualified Network.Riak.CRDT.Response as Resp
 
 
-counterUpdate :: Connection -> BucketType -> Bucket -> Key
-           -> [CRDT.CounterOp] -> IO ()
-counterUpdate conn t b k ops = Conn.exchange_ conn (Req.counterUpdate ops t b k)
+counterSendUpdate :: Connection -> BucketType -> Bucket -> Key
+                  -> [CRDT.CounterOp] -> IO ()
+counterSendUpdate conn t b k ops = Conn.exchange_ conn (Req.counterUpdate ops t b k)
 
 
-setUpdate :: Connection -> BucketType -> Bucket -> Key
-          -> [CRDT.SetOp] -> IO ()
-setUpdate conn t b k ops = Conn.exchange_ conn (Req.setUpdate ops t b k)
+setSendUpdate :: Connection -> BucketType -> Bucket -> Key
+              -> [CRDT.SetOp] -> IO ()
+setSendUpdate conn t b k ops = Conn.exchange_ conn (Req.setUpdate ops t b k)
 
 
-mapUpdate :: Connection -> BucketType -> Bucket -> Key
-          -> [CRDT.MapOp] -> IO ()
-mapUpdate conn t b k ops = Conn.exchange_ conn (Req.mapUpdate ops t b k)
+mapSendUpdate :: Connection -> BucketType -> Bucket -> Key
+              -> [CRDT.MapOp] -> IO ()
+mapSendUpdate conn t b k ops = Conn.exchange_ conn (Req.mapUpdate ops t b k)
 
 
 get :: Connection -> BucketType -> Bucket -> Key

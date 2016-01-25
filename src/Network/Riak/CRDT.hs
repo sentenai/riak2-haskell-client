@@ -162,14 +162,14 @@ class MapCRDT a => CRDT a op | a -> op, op -> a where
 
 instance CRDT Counter CounterOp where
     modify = modifyCounter
-    sendModify = counterUpdate
+    sendModify = counterSendUpdate
 
 instance CRDT Set SetOp where
     modify = modifySet
-    sendModify = setUpdate
+    sendModify = setSendUpdate
 
 instance CRDT Map MapOp where
     modify = modifyMap
-    sendModify = mapUpdate
+    sendModify = mapSendUpdate
 
 

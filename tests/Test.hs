@@ -81,14 +81,14 @@ counter = testCase "increment" $ do
               Just (C.DTCounter (C.Counter b)) <- act conn
               assertEqual "inc by 1" 1 (b-a)
     where
-      act c = do C.counterUpdate c "counters" "xxx" "yyy" [C.CounterInc 1]
+      act c = do C.counterSendUpdate c "counters" "xxx" "yyy" [C.CounterInc 1]
                  C.get c "counters" "xxx" "yyy"
 
 set :: TestTree
 set = testCase "set add" $ do
         conn <- Riak.connect Riak.defaultClient
-        C.setUpdate conn btype buck key [C.SetRemove val]
-        C.setUpdate conn btype buck key [C.SetAdd val]
+        C.setSendUpdate conn btype buck key [C.SetRemove val]
+        C.setSendUpdate conn btype buck key [C.SetAdd val]
         Just (C.DTSet (C.Set r)) <- C.get conn btype buck key
         assertBool "-foo +foo => contains foo" $ val `S.member` r
     where
@@ -100,14 +100,17 @@ map_ = testCase "map update" $ do
          Just (C.DTMap a) <- act conn
          Just (C.DTMap b) <- act conn
          assertEqual "map update" (C.modify mapOp a) b
+         assertEqual "mapUpdate sugar" mapOp' mapOp
     where
-      act c = do C.mapUpdate c btype buck key [mapOp]
+      act c = do C.mapSendUpdate c btype buck key [mapOp]
                  C.get c btype buck key 
 
       btype = "maps"
       (buck,key) = ("xxx","yyy")
 
-      mapOp = C.MapUpdate (C.MapPath ("X" :| "Y" : "Z" : []))
-                          (C.MapCounterOp (C.CounterInc 1))
+      mapOp = "X" C.-/ "Y" C.-/ "Z" `C.mapUpdate` C.CounterInc 1
+
+      mapOp' = C.MapUpdate (C.MapPath ("X" :| "Y" : "Z" : []))
+                           (C.MapCounterOp (C.CounterInc 1))
 
 
