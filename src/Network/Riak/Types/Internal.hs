@@ -178,7 +178,7 @@ data SearchResult = SearchResult {
       bucketType :: BucketType,
       bucket :: Bucket,
       key :: Key
-} deriving Show
+    } deriving (Eq,Show)
 
 -- | List of (known to us) inbound or outbound message identifiers.
 data MessageTag = ErrorResponse

@@ -30,6 +30,9 @@ before_install:
   - ./rel/riak/bin/riak-admin bucket-type activate maps
   - ./rel/riak/bin/riak-admin bucket-type activate sets
   - ./rel/riak/bin/riak-admin bucket-type activate counters
+  # +search
+  - curl -XPUT 127.0.0.1:8098/search/index/set-ix -H 'Content-Type:application/json' -d '{"schema":"_yz_default"}'
+  - ./rel/riak/bin/riak-admin bucket-type update sets '{"props":{"search_index":"set-ix"}}'
   - cd -
 
 matrix:

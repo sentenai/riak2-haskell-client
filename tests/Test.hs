@@ -7,15 +7,18 @@ import           Control.Monad
 import qualified Data.Map                     as M
 import qualified Data.Set                     as S
 import           Data.List.NonEmpty           (NonEmpty(..))
+import           Data.Semigroup
 import           Data.Text                    (Text)
+import           Control.Concurrent           (threadDelay)
 import qualified Network.Riak                 as Riak
 import qualified Network.Riak.Basic           as B
 import qualified Network.Riak.CRDT            as C
 import qualified Network.Riak.CRDT.Riak       as C
+import qualified Network.Riak.Search          as S
 import qualified Network.Riak.Cluster         as Riak
 import qualified Network.Riak.JSON            as J
 import           Network.Riak.Resolvable      (ResolvableMonoid (..))
-import           Network.Riak.Types
+import           Network.Riak.Types           hiding (key)
 import qualified Properties
 import qualified CRDTProperties               as CRDT
 import           Test.Tasty
@@ -29,7 +32,8 @@ tests :: TestTree
 tests = testGroup "Tests" [properties,
                            integrationalTests,
                            ping'o'death,
-                           crdts
+                           crdts,
+                           search
                           ]
 properties :: TestTree
 properties = testGroup "simple properties" Properties.tests
@@ -114,3 +118,21 @@ map_ = testCase "map update" $ do
                            (C.MapCounterOp (C.CounterInc 1))
 
 
+search :: TestTree
+search = testCase "basic searchRaw" $ do
+           conn <- Riak.connect Riak.defaultClient
+           C.sendModify conn btype buck key [C.SetRemove kw]
+           delay
+           a <- query conn ("set:" <> kw)
+           assertEqual "should not found non-existing" [] a
+           C.sendModify conn btype buck key [C.SetAdd kw]
+           delay
+           b <- query conn ("set:" <> kw)
+           assertBool "searches specific" $ not (null b)
+           c <- query conn ("set:*")
+           assertBool "searches *" $ not (null c)
+    where
+      query conn q = S.searchRaw conn q "set-ix"
+      (btype,buck,key) = ("sets","xxx","yyy")
+      kw = "haskell"
+      delay = threadDelay (1*1000*1000) -- http://docs.basho.com/riak/2.1.3/dev/using/search/#Indexing-Values
