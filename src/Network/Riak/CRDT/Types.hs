@@ -8,21 +8,20 @@
 module Network.Riak.CRDT.Types (
         -- * Types
         DataType(..),
-        -- ** Maps
-        Map(..),
-        MapField(..),
-        MapEntry(..), MapEntryTag(..), tagOf',
-        MapPath(..), MapContent,
-        -- *** Modification
-        MapOp(..), MapValueOp(..),
         -- ** Counters
         Counter(..), Count,
         -- *** Modification
         CounterOp(..),
         -- ** Sets
-        Set(..), setFromSeq,
+        Set(..),
         -- *** Modification
         SetOp(..),
+        -- ** Maps
+        Map(..), MapContent,
+        MapField(..),
+        MapEntry(..),
+        -- *** Modification
+        MapOp(..), MapPath(..), MapValueOp(..), mapUpdate, (-/),
         -- ** Registers
         Register(..),
         -- *** Modification
@@ -31,8 +30,8 @@ module Network.Riak.CRDT.Types (
         Flag(..),
         -- *** Modification
         FlagOp(..),
-        -- * Re-exports
-        NonEmpty(..))
+        -- * Misc
+        NonEmpty(..), tagOf', setFromSeq, MapEntryTag(..))
     where
 
 
@@ -47,11 +46,7 @@ import Data.Semigroup
 import Data.Default.Class
 import Control.DeepSeq (NFData)
 import GHC.Generics (Generic)
-
--- data Operation = MapOperation MapOp
---                | SetOperation SetOp
---                | CounterOperation CounterOp
---                  deriving (Show)
+import Data.String
 
 
 -- | CRDT Map is indexed by MapField, which is a name tagged by a type
@@ -62,7 +57,9 @@ data MapField = MapField MapEntryTag ByteString deriving (Eq,Ord,Show,Generic)
 instance NFData MapField
 
 -- | CRDT Map is a Data.Map indexed by 'MapField' and holding
--- 'MapEntry'. Maps are specials in a way that they can additionally
+-- 'MapEntry'.
+-- 
+-- Maps are specials in a way that they can additionally
 -- hold 'Flag's, 'Register's, and most importantly, other 'Map's.
 newtype Map = Map MapContent deriving (Eq,Show,Generic)
 
@@ -93,21 +90,6 @@ data MapEntry = MapCounter !Counter
 instance NFData MapEntry
 
 
--- data ME = MESet Set | MECounter Counter
-
--- type family S (t :: MapTag) :: * where
---     S 'MapCounter_ = Set
-
--- data family X (t::ME) :: *
--- data instance X (MESet _) = Q
-
-tagOf :: MapEntry -> MapEntryTag
-tagOf MapCounter{}  = MapCounterTag
-tagOf MapSet{}      = MapSetTag
-tagOf MapRegister{} = MapRegisterTag
-tagOf MapFlag{}     = MapFlagTag
-tagOf MapMap{}      = MapMapTag
-
 tagOf' :: MapValueOp -> MapEntryTag
 tagOf' MapCounterOp{}  = MapCounterTag
 tagOf' MapSetOp{}      = MapSetTag
@@ -116,34 +98,21 @@ tagOf' MapFlagOp{}     = MapFlagTag
 tagOf' MapMapOp{}      = MapMapTag
 
 
--- data T :: MapTag -> * where
---     MapCounterT :: T 'MapCounter_
-
--- deriving instance Show (T a)
-
--- data MapEntry :: * where
---     MapEntry :: (Show (S a), Show (T a)) => T a -> S a -> MapEntry
-
--- deriving instance Show MapEntry
-
 -- | Selector (“xpath”) inside 'Map'
 newtype MapPath = MapPath (NonEmpty ByteString) deriving Show
 
--- instance CRDT Counter where
---     type Operation_ Counter = CounterOp
---     modify = _
-
--- class IsMapEntry a
--- instance IsMapEntry Set
--- instance IsMapEntry (Map t)
 
 -- | map operations
+-- It's easier to use 'mapUpdate':
+-- 
+-- >>> "x" -/ "y" -/ "z" `mapUpdate` SetAdd "elem"
+-- MapUpdate (MapPath ("x" :| ["y","z"])) (MapCounterOp (CounterInc 1))
 data MapOp = --MapRemove MapField           -- ^ remove value in map
              MapUpdate MapPath MapValueOp   -- ^ update value on path by operation
     deriving Show
 
 
--- | polymprhic version of MapOp for nicer syntax
+-- | Polymprhic version of MapOp for nicer syntax
 data MapOp_ op = --MapRemove MapField
                  MapUpdate_ MapPath op
     deriving Show
@@ -169,13 +138,21 @@ p `mapUpdate` op = MapUpdate p (toValueOp op)
 
 infixr 5 `mapUpdate`
 
--- | registers can be set
+-- | Registers can be set to a value
+-- 
+-- >>> RegisterSet "foo"
 data RegisterOp = RegisterSet !ByteString deriving Show
 
--- | flags can be enabled/disabled
+-- | Flags can be enabled / disabled
+-- 
+-- >>> FlagSet True
 data FlagOp = FlagSet !Bool deriving Show
 
--- | Flag holds a 'Bool'
+-- | Flags can only be held as a 'Map' element.
+-- 
+-- Flag can be set or unset
+-- 
+-- >>> Flag False
 newtype Flag = Flag Bool deriving (Eq,Ord,Show,Generic)
 
 instance NFData Flag
@@ -192,7 +169,9 @@ instance Semigroup Flag where
 instance Default Flag where
     def = mempty
 
--- | Register holds a 'ByteString'
+-- | Registers can only be held as a 'Map' element.
+-- 
+-- Register holds a 'ByteString'.
 newtype Register = Register ByteString deriving (Eq,Show,Generic)
 
 instance NFData Register
@@ -209,14 +188,8 @@ instance Default Register where
     def = mempty
 
 
--- data MapValueOp a where
---     MapCounterOp :: CounterOp -> MapValueOp Counter
---     MapSetOp :: SetOp -> MapValueOp Set
---     MapRegisterOp :: RegisterOp -> MapValueOp Register
---     MapFlagOp :: FlagOp -> MapValueOp Flag
---     MapMapOp :: MapOp -> MapValueOp Map
 
--- | operations on map values
+-- | Operations on map values
 data MapValueOp = MapCounterOp !CounterOp
                 | MapSetOp !SetOp
                 | MapRegisterOp !RegisterOp
@@ -236,6 +209,8 @@ data DataType = DTCounter Counter
 instance NFData DataType
 
 -- | CRDT Set is a Data.Set
+-- 
+-- >>> Set (Data.Set.fromList ["foo","bar"])
 newtype Set = Set (S.Set ByteString) deriving (Eq,Ord,Show,Generic,Monoid)
 
 instance NFData Set
@@ -248,13 +223,19 @@ instance Default Set where
 
 -- | CRDT Set operations
 data SetOp = SetAdd ByteString    -- ^ add element to the set
+                                  -- 
+                                  -- >>> SetAdd "foo"
            | SetRemove ByteString -- ^ remove element from the set
+                                  -- 
+                                  -- >>> SetRemove "bar"
              deriving Show
 
 setFromSeq :: Seq.Seq ByteString -> Set
 setFromSeq = Set . S.fromList . F.toList
 
 -- | CRDT Counter hold a integer 'Count'
+-- 
+-- >>> Counter 42
 newtype Counter = Counter Count deriving (Eq,Ord,Num,Show,Generic)
 type Count = Int64
 
@@ -270,6 +251,9 @@ instance Monoid Counter where
 instance Default Counter where
     def = mempty
 
+-- | Counters can be incremented/decremented
+-- 
+-- >>> CounterInc 1
 data CounterOp = CounterInc !Count deriving (Show)
 
 instance Monoid CounterOp where
