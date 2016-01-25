@@ -68,7 +68,6 @@ modifyMap :: MapOp -> Map -> Map
 modifyMap (MapUpdate path op) m = modifyMap1 path op m
 
 
-
 modifyMap1 :: MapPath -> MapValueOp -> Map -> Map
 modifyMap1 (MapPath (e :| [])) op m = modMap mf op m
     where mf = MapField (mapEntryTag op) e

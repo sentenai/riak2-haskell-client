@@ -46,6 +46,7 @@ import qualified Network.Riak.Protocol.Link as Link
 import qualified Network.Riak.Protocol.Pair as Pair
 
 import qualified Data.ByteString.Lazy as L
+import qualified Data.ByteString.Lazy.Char8 as LC
 import qualified Data.Sequence as Seq
 import qualified Data.Map.Strict as M
 import Data.Maybe (fromMaybe)
@@ -89,14 +90,15 @@ unescapeLinks c = c { links = go <$> links c }
                  , Link.key = unescape <$> Link.key l }
 
 search :: SearchQueryResponse -> [SearchResult]
-search = map toResult . toList . docs
+search = map toSearchResult . toList . docs
 
-toResult :: SearchDoc -> SearchResult
-toResult r = SearchResult {
-               bucketType = field "_yz_rt",
-               bucket     = field "_yz_rb",
-               key        = field "_yz_rk"
-             }
+toSearchResult :: SearchDoc -> SearchResult
+toSearchResult r = SearchResult {
+                     bucketType = field "_yz_rt",
+                     bucket     = field "_yz_rb",
+                     key        = field "_yz_rk",
+                     score      = fmap (read . LC.unpack) =<< M.lookup "score" info
+                   }
     where
       info :: M.Map L.ByteString (Maybe L.ByteString)
       info = M.fromList . map (Pair.key &&& Pair.value) . toList . fields $ r

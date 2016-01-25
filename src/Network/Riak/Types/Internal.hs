@@ -173,11 +173,15 @@ data Job = JSON ByteString
 -- | Search request
 type SearchQuery = ByteString
 
+-- | Search result score
+type Score = Double
+
 -- | Solr search result
 data SearchResult = SearchResult {
-      bucketType :: BucketType,
-      bucket :: Bucket,
-      key :: Key
+      bucketType :: BucketType, -- ^ bucket type
+      bucket :: Bucket,         -- ^ bucket
+      key :: Key,               -- ^ key
+      score :: Maybe Score      -- ^ score, if provided
     } deriving (Eq,Show)
 
 -- | List of (known to us) inbound or outbound message identifiers.
