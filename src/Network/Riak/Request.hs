@@ -207,7 +207,7 @@ mapReduce (Erlang bs) = MapReduceRequest bs "application/x-erlang-binary"
 search :: SearchQuery -> Index -> SearchQueryRequest.SearchQueryRequest
 search q ix = SearchQueryRequest.SearchQueryRequest {
                 SearchQueryRequest.q = q,
-                SearchQueryRequest.index = ix,
+                SearchQueryRequest.index = escape ix,
                 SearchQueryRequest.rows = Nothing,
                 SearchQueryRequest.start = Nothing,
                 SearchQueryRequest.sort = Nothing,
