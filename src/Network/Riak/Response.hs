@@ -25,6 +25,7 @@ module Network.Riak.Response
     , getBucket
     , unescapeLinks
     , search
+    , getIndex
     ) where
 
 #if __GLASGOW_HASKELL__ < 710
@@ -41,6 +42,7 @@ import Network.Riak.Protocol.PutResponse
 import Network.Riak.Protocol.SearchQueryResponse
 import Network.Riak.Protocol.SearchDoc
 import qualified Network.Riak.Protocol.YzIndex as Yz
+import qualified Network.Riak.Protocol.YzIndexGetResponse as Yz
 import Network.Riak.Types.Internal hiding (MessageTag(..))
 import qualified Network.Riak.Protocol.Link as Link
 import qualified Network.Riak.Protocol.Pair as Pair
@@ -110,3 +112,8 @@ toSearchResult r = SearchResult {
             . M.lookup name $ info
 
       unexpected = unexError "Network.Riak.Response" "search"
+
+
+getIndex :: Yz.YzIndexGetResponse -> [IndexInfo]
+getIndex = toList . Yz.index
+

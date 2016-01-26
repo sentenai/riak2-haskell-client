@@ -33,7 +33,7 @@ tests = testGroup "Tests" [properties,
                            integrationalTests,
                            ping'o'death,
                            crdts,
-                           search
+                           searches
                           ]
 properties :: TestTree
 properties = testGroup "simple properties" Properties.tests
@@ -52,6 +52,11 @@ crdts = testGroup "CRDT" [
          CRDT.tests
         ]
 
+searches :: TestTree
+searches = testGroup "Search" [
+            search,
+            getIndex
+           ]
 
 testClusterSimple :: TestTree
 testClusterSimple = testCase "testClusterSimple" $ do
@@ -136,3 +141,13 @@ search = testCase "basic searchRaw" $ do
       (btype,buck,key) = ("sets","xxx","yyy")
       kw = "haskell"
       delay = threadDelay (1*1000*1000) -- http://docs.basho.com/riak/2.1.3/dev/using/search/#Indexing-Values
+
+
+getIndex :: TestTree
+getIndex = testCase "getIndex" $ do
+             conn <- Riak.connect Riak.defaultClient
+             all <- S.getIndex conn Nothing
+             one <- S.getIndex conn (Just "set-ix")
+             assertBool "all indeces" $ not (null all)
+             assertEqual "set index" 1 (length one)
+

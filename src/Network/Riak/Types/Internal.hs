@@ -33,6 +33,7 @@ module Network.Riak.Types.Internal
     , Tag
     , SearchQuery
     , SearchResult(..)
+    , IndexInfo
     , VClock(..)
     , Job(..)
     -- * Quorum management
@@ -62,6 +63,7 @@ import Data.Word (Word32)
 import GHC.Generics (Generic)
 import Network.Socket (HostName, ServiceName, Socket)
 import Text.ProtocolBuffers (ReflectDescriptor, Wire)
+import qualified Network.Riak.Protocol.YzIndex as YzIndex
 
 
 -- | A client identifier.  This is used by the Riak cluster when
@@ -176,6 +178,9 @@ type SearchQuery = ByteString
 -- | Search result score
 type Score = Double
 
+-- | Search index info
+type IndexInfo = YzIndex.YzIndex
+
 -- | Solr search result
 data SearchResult = SearchResult {
       bucketType :: BucketType, -- ^ bucket type
@@ -219,6 +224,8 @@ data MessageTag = ErrorResponse
                 | DtUpdateResponse
                 | SearchQueryRequest
                 | SearchQueryResponse
+                | YokozunaIndexGetRequest
+                | YokozunaIndexGetResponse
                   deriving (Eq, Show, Generic)
 
 instance Hashable MessageTag
