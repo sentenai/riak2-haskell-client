@@ -107,14 +107,14 @@ newtype MapPath = MapPath (NonEmpty ByteString) deriving (Eq,Show)
 -- 
 -- >>> "x" -/ "y" -/ "z" `mapUpdate` SetAdd "elem"
 -- MapUpdate (MapPath ("x" :| ["y","z"])) (MapCounterOp (CounterInc 1))
-data MapOp = --MapRemove MapField           -- ^ remove value in map
-             MapUpdate MapPath MapValueOp   -- ^ update value on path by operation
+data MapOp = MapRemove MapField           -- ^ remove value in map
+           | MapUpdate MapPath MapValueOp -- ^ update value on path by operation
     deriving (Eq,Show)
 
 
 -- | Polymprhic version of MapOp for nicer syntax
-data MapOp_ op = --MapRemove MapField
-                 MapUpdate_ MapPath op
+data MapOp_ op = MapRemove_ MapField
+               | MapUpdate_ MapPath op
     deriving Show
 
 

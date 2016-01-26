@@ -1,3 +1,7 @@
+-- | module: Network.Riak.CRDT.Ops
+-- 
+-- Conversions of CRDT operations to 'PB.DtOp'
+-- 
 module Network.Riak.CRDT.Ops (counterUpdateOp,
                               setUpdateOp, SetOpsComb(..), toOpsComb,
                               mapUpdateOp)
@@ -71,9 +75,11 @@ mapUpdateOp ops = PB.DtOp { PB.counter_op = Nothing,
 
 mapOpPB :: [MapOp] -> PBMap.MapOp
 mapOpPB ops = PBMap.MapOp rems updates
-    where rems    = mempty
+    where rems    = Seq.fromList [ toRemove f   | MapRemove f <- ops ]
           updates = Seq.fromList [ toUpdate f u | MapUpdate f u <- ops ]
 
+toRemove :: MapField -> PBMap.MapField
+toRemove (MapField t name) = toField name t
 
 toUpdate :: MapPath -> MapValueOp -> PBMap.MapUpdate
 toUpdate (MapPath (e :| [])) op     = toUpdate' e (mapEntryTag op) op

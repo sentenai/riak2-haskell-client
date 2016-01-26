@@ -64,7 +64,7 @@ modifySet op (Set c) = Set (c `S.union` adds S.\\ rems)
 
 
 modifyMap :: MapOp -> Map -> Map
---modifyMap (MapRemove path) m    = m
+modifyMap (MapRemove field) (Map mc) = Map $ M.delete field mc
 modifyMap (MapUpdate path op) m = modifyMap1 path op m
 
 
@@ -79,7 +79,6 @@ modifyMap1 (MapPath (e :| (r:rs))) op (Map m')
             f (Just z) = z
 
 modMap :: MapField -> MapValueOp -> Map -> Map
---modMap ix Nothing (Map m) = Map $ M.delete ix m
 modMap ix op (Map m) = Map $ M.alter (Just . modifyMapValue op) ix m
 
 

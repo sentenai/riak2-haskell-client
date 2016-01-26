@@ -106,16 +106,36 @@ set = testCase "set add" $ do
 map_ :: TestTree
 map_ = testCase "map update" $ do
          conn <- Riak.connect Riak.defaultClient
-         Just (C.DTMap a) <- act conn
-         Just (C.DTMap b) <- act conn
-         assertEqual "map update" (C.modify mapOp a) b
+         Just (C.DTMap a) <- act conn -- do smth (increment), get
+         Just (C.DTMap b) <- act conn -- increment, get
+         assertEqual "map update" (C.modify mapOp a) b -- modify's behaviour should match
          assertEqual "mapUpdate sugar" mapOp' mapOp
+
+         -- remove top-level field (X)
+         C.mapSendUpdate conn btype buck key [C.MapRemove fieldX]
+         Just (C.DTMap c) <- act conn
+         assertEqual "update after delete" updateCreates (let C.Map m = c in m M.! fieldX)
+
+         -- remove nested field (X/Y)
+         C.mapSendUpdate conn btype buck key [C.MapUpdate (C.MapPath $ "X" :| [])
+                                                   (C.MapMapOp (C.MapRemove fieldY))]
+         Just (C.DTMap d) <- C.get conn btype buck key
+         assertEqual "update after nested delete" (C.MapMap (C.Map mempty))
+                                                  (let C.Map m = d in m M.! fieldX)
     where
       act c = do C.mapSendUpdate c btype buck key [mapOp]
                  C.get c btype buck key 
 
       btype = "maps"
+      fieldX = C.MapField C.MapMapTag "X"
+      fieldY = C.MapField C.MapMapTag "Y"
       (buck,key) = ("xxx","yyy")
+
+      updateCreates = C.MapMap (C.Map (M.fromList
+                                            [(C.MapField C.MapMapTag "Y",
+                                              C.MapMap (C.Map (M.fromList
+                                                                    [(C.MapField C.MapCounterTag "Z",
+                                                                      C.MapCounter (C.Counter 1))])))]))
 
       mapOp = "X" C.-/ "Y" C.-/ "Z" `C.mapUpdate` C.CounterInc 1
 
