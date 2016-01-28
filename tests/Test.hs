@@ -162,7 +162,7 @@ search = testCase "basic searchRaw" $ do
       query conn q = S.searchRaw conn q "set-ix"
       (btype,buck,key) = ("sets","xxx","yyy")
       kw = "haskell"
-      delay = threadDelay (1*1000*1000) -- http://docs.basho.com/riak/2.1.3/dev/using/search/#Indexing-Values
+      delay = threadDelay (1*5000*1000) -- http://docs.basho.com/riak/2.1.3/dev/using/search/#Indexing-Values
 
 
 getIndex :: TestTree
