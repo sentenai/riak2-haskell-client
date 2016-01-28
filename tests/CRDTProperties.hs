@@ -96,10 +96,12 @@ class (Show t, C.CRDT t op, Default t) => Action t op where
     fromDT :: C.DataType -> t
     -- | pack a value into 'C.DataType'
     toDT :: t -> C.DataType
-    -- | a kludge: if there's no value at the moment, having been
-    -- provieded with an op, will riak create and operate on a empty
-    -- value?
-    updateCreates :: Proxy t -> op -> Bool
+    -- | a kludge (or two), see 'update': if there's no value at the
+    -- moment, having been provieded with an op, will riak create and
+    -- operate on a empty value?
+    updateCreates :: Proxy t -> Maybe C.DataType -> op -> Bool
+    -- | is operation target there?
+    targetThere :: Maybe C.DataType -> op -> Bool
 
 
 instance Action C.Counter C.CounterOp where
@@ -107,24 +109,31 @@ instance Action C.Counter C.CounterOp where
     fromDT (C.DTCounter c) = c
     fromDT _               = error "expected counter" -- ok for tests
     toDT = C.DTCounter
-    updateCreates _ _ = True
+    updateCreates _ _ _ = True
+    targetThere _ _ = True
 
 instance Action C.Set C.SetOp where
     bucketType _ = "sets"
     fromDT (C.DTSet c) = c
     fromDT _           = error "expected set"
     toDT = C.DTSet
-    updateCreates _ C.SetAdd{}    = True
-    updateCreates _ C.SetRemove{} = False
+    updateCreates _ _ C.SetAdd{}    = True
+    updateCreates _ _ C.SetRemove{} = False
+    targetThere _ _ = True
 
 instance Action C.Map C.MapOp where
     bucketType _ = "maps"
     fromDT (C.DTMap c) = c
     fromDT _           = error "expected map"
     toDT = C.DTMap
-    updateCreates _ (C.MapUpdate _ (C.MapSetOp C.SetRemove{})) = False
-    updateCreates _ _                                          = True
+    -- Riak will operate on default value inside map if it's not there.
+    -- Except while it's SetRemove.
+    updateCreates _ _ (C.MapUpdate _ (C.MapSetOp C.SetRemove{})) = False
+    updateCreates _ _ _                                          = True
 
+    targetThere (Just (C.DTMap m)) (C.MapUpdate path _)
+        | Just{} <- C.xlookup path C.MapSetTag m = True
+    targetThere _ _ = False
 
 -- | Many Arbitrary instances.
 -- TODO: 'Generic' arbitrary
@@ -231,18 +240,24 @@ pure_ p ops = machine p ops onAct
 
 update :: forall a op. (Action a op) =>
           op -> Maybe C.DataType -> Maybe C.DataType
-update op Nothing
-       | updateCreates (Proxy :: Proxy a) op
-           = update op (Just . toDT' $ def) -- it's sometimes ok to
-                                            -- update a non-set value
-                                            -- in riak's mind
-       | otherwise
-           = Nothing
-             where toDT' :: a -> C.DataType
-                   toDT' = toDT
-update op (Just dt) = Just . toDT . C.modify op . fromDT' $ dt
+update op dt
+    -- | Dear diary, this is getting out of hand. It'd be far easier to
+    -- not bother and assume Nothing ≡ Just mempty in test conditions.
+    -- 
+    -- …but let's continue to bother and gain more safety.
+    | Just d <- dt, targetThere dt op
+        = operate d
+    | updateCreates (Proxy :: Proxy a) dt op
+        -- it's sometimes ok to update even a non-set value in riak's mind
+        = operate $ maybe surrogate id dt
+    | otherwise
+        = dt
     where fromDT' :: C.DataType -> a
           fromDT' = fromDT
+          toDT' :: a -> C.DataType
+          toDT' = toDT
+          surrogate = toDT' def
+          operate = Just . toDT . C.modify op . fromDT'
 
 
 
