@@ -148,12 +148,15 @@ instance Arbitrary C.Counter where
     arbitrary = C.Counter <$> arbitrary
 
 instance Arbitrary C.CounterOp where
-    arbitrary = C.CounterInc <$> choose (-16,16)
+    arbitrary = C.CounterInc <$> choose (-16,16) -- https://github.com/basho/riak/issues/804
 
 instance Arbitrary C.SetOp where
     arbitrary = oneof [
                  C.SetAdd <$> arbitrary, C.SetRemove <$> arbitrary
                 ]
+
+instance Arbitrary C.FlagOp where
+    arbitrary = C.FlagSet <$> arbitrary
 
 instance Arbitrary C.Set where
     arbitrary = C.Set . Set.fromList <$> arbitrary
@@ -174,7 +177,9 @@ instance Arbitrary C.MapEntryTag where
     arbitrary = elements [ C.MapCounterTag ]
 
 instance Arbitrary C.MapValueOp where
-    arbitrary = oneof [ C.MapCounterOp <$> arbitrary ]
+    arbitrary = oneof [ C.MapCounterOp <$> arbitrary,
+                        C.MapSetOp <$> arbitrary,
+                        C.MapFlagOp <$> arbitrary ]
 
 instance Arbitrary C.Map
 
@@ -268,7 +273,7 @@ doRiak p ops = withSomeConnection $ \conn -> do
                    (_,_,r) <- runRWST (riak p ops) () conn
                    pure r
 
-doPure :: Action a op =>
+doPure :: (Action a op, Show op) =>
           RiakState -> Proxy a -> [Op a op] -> PropertyM IO [Maybe C.DataType]
 doPure stat p ops = do (_,_,r) <- runRWST (pure_ p ops) () stat
                        pure r
