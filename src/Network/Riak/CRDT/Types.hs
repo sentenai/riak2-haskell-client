@@ -5,7 +5,7 @@
 -- 
 -- Haskell-side view of CRDT
 -- 
-{-# LANGUAGE OverloadedStrings, GeneralizedNewtypeDeriving, DeriveGeneric #-}
+{-# LANGUAGE OverloadedStrings, PatternGuards, GeneralizedNewtypeDeriving, DeriveGeneric #-}
 
 
 module Network.Riak.CRDT.Types (
@@ -23,6 +23,8 @@ module Network.Riak.CRDT.Types (
         Map(..), MapContent,
         MapField(..),
         MapEntry(..),
+        -- *** Inspection
+        xlookup,
         -- *** Modification
         MapOp(..), MapPath(..), MapValueOp(..), mapUpdate, (-/),
         -- ** Registers
@@ -140,6 +142,23 @@ mapUpdate :: IsMapOp o => MapPath -> o -> MapOp
 p `mapUpdate` op = MapUpdate p (toValueOp op)
 
 infixr 5 `mapUpdate`
+
+
+
+-- | Lookup a value of a given 'MapEntryTag' type on a given 'MapPath'
+-- inside a map
+-- 
+-- >>> lookup ("a" -/ "b") MapFlagTag $ { "a"/Map: { "b"/Flag: Flag False } } -- pseudo
+-- Just (MapFlag (Flag False))
+xlookup :: MapPath -> MapEntryTag -> Map -> Maybe MapEntry
+xlookup (MapPath (e :| [])) tag (Map m) = M.lookup (MapField tag e) m
+xlookup (MapPath (e :| (r:rs))) tag (Map m)
+    | Just (MapMap m') <- inner = xlookup (MapPath (r :| rs)) tag m'
+    | otherwise                 = Nothing
+    where inner = M.lookup (MapField MapMapTag e) m
+
+
+
 
 -- | Registers can be set to a value
 -- 

@@ -114,14 +114,16 @@ map_ = testCase "map update" $ do
          -- remove top-level field (X)
          C.mapSendUpdate conn btype buck key [C.MapRemove fieldX]
          Just (C.DTMap c) <- act conn
-         assertEqual "update after delete" updateCreates (let C.Map m = c in m M.! fieldX)
+         assertEqual "update after delete" (Just updateCreates) $ C.xlookup "X" C.MapMapTag c
 
          -- remove nested field (X/Y)
          C.mapSendUpdate conn btype buck key [C.MapUpdate (C.MapPath $ "X" :| [])
                                                    (C.MapMapOp (C.MapRemove fieldY))]
          Just (C.DTMap d) <- C.get conn btype buck key
-         assertEqual "update after nested delete" (C.MapMap (C.Map mempty))
-                                                  (let C.Map m = d in m M.! fieldX)
+         assertEqual "update after nested delete 1" Nothing
+                         $ C.xlookup ("X" C.-/ "Y") C.MapMapTag d
+         assertEqual "update after nested delete 2" (Just (C.MapMap (C.Map mempty)))
+                         $ C.xlookup "X" C.MapMapTag d
     where
       act c = do C.mapSendUpdate c btype buck key [mapOp]
                  C.get c btype buck key 
