@@ -1,4 +1,7 @@
--- | Module: Network.Riak.Search
+-- | module:    Network.Riak.Search
+--   copyright: (c) 2016 Sentenai
+--   author:    Antonio Nikishaev <me@lelf.lu>
+--   license:   Apache
 -- 
 -- Solr search
 -- 
