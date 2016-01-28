@@ -1,3 +1,8 @@
+-- |   module:    Network.Riak.CRDT.Response
+--     copyright: (c) 2016 Sentenai
+--     author:    Antonio Nikishaev <me@lelf.lu>
+--     license:   Apache
+-- 
 {-# LANGUAGE RecordWildCards #-}
 module Network.Riak.CRDT.Response (get) where
 

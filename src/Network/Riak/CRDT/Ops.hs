@@ -1,4 +1,7 @@
--- | module: Network.Riak.CRDT.Ops
+-- | module:    Network.Riak.CRDT.Ops
+--   copyright: (c) 2016 Sentenai
+--   author:    Antonio Nikishaev <me@lelf.lu>
+--   license:   Apache
 -- 
 -- Conversions of CRDT operations to 'PB.DtOp'
 -- 

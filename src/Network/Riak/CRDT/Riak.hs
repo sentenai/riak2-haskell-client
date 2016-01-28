@@ -1,3 +1,9 @@
+-- |   module:    Network.Riak.CRDT.Riak
+--     copyright: (c) 2016 Sentenai
+--     author:    Antonio Nikishaev <me@lelf.lu>
+--     license:   Apache
+-- 
+-- CRDT operations
 module Network.Riak.CRDT.Riak where
 
 import qualified Network.Riak.Connection as Conn

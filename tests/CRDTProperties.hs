@@ -1,3 +1,8 @@
+-- |   module:    CRDTProperties
+--     copyright: (c) 2016 Sentenai
+--     author:    Antonio Nikishaev <me@lelf.lu>
+--     license:   Apache
+-- 
 {-# LANGUAGE OverloadedStrings, FlexibleContexts, TupleSections, ScopedTypeVariables,
     GADTs, StandaloneDeriving, UndecidableInstances, PatternGuards, MultiParamTypeClasses #-}
 {-# OPTIONS_GHC -fno-warn-orphans #-}

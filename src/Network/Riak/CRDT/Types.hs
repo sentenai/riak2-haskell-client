@@ -1,4 +1,7 @@
--- | module: Network.Riak.CRDT.Types
+-- |   module:    Network.Riak.CRDT.Types
+--     copyright: (c) 2016 Sentenai
+--     author:    Antonio Nikishaev <me@lelf.lu>
+--     license:   Apache
 -- 
 -- Haskell-side view of CRDT
 -- 

@@ -1,4 +1,7 @@
-{- | Module: Network.Riak.CRDT
+{- | module:    Network.Riak.CRDT
+     copyright: (c) 2016 Sentenai
+     author:    Antonio Nikishaev <me@lelf.lu>
+     license:   Apache
 
 CRDT operations
 
