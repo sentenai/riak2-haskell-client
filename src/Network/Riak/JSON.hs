@@ -35,7 +35,7 @@ import Data.Aeson.Types (FromJSON(..), ToJSON(..))
 import Data.Monoid (Monoid)
 #endif
 import Data.Typeable (Typeable)
-import Network.Riak.Types.Internal
+import Network.Riak.Types.Internal hiding (bucket,key)
 import qualified Network.Riak.Value as V
 
 newtype JSON a = J {

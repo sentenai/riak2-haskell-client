@@ -47,7 +47,7 @@ import Data.Monoid (Monoid(mappend))
 #endif
 import Data.Typeable (Typeable)
 import Network.Riak.Debug (debugValues)
-import Network.Riak.Types.Internal hiding (MessageTag(..))
+import Network.Riak.Types.Internal hiding (MessageTag(..),bucket,key)
 
 -- | Automated conflict resolution failed.
 data ResolutionFailure = RetriesExceeded

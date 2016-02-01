@@ -34,7 +34,7 @@ module Network.Riak.JSON.Resolvable
 import Control.Monad.IO.Class
 import Data.Aeson.Types (FromJSON(..), ToJSON(..))
 import Network.Riak.Resolvable.Internal (ResolutionFailure(..), Resolvable(..))
-import Network.Riak.Types.Internal hiding (MessageTag(..))
+import Network.Riak.Types.Internal hiding (MessageTag(..), bucket, key)
 import qualified Network.Riak.JSON as J
 import qualified Network.Riak.Resolvable.Internal as R
 
