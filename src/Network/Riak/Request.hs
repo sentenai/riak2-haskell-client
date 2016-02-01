@@ -97,9 +97,11 @@ getServerInfo :: GetServerInfoRequest
 getServerInfo = GetServerInfoRequest
 {-# INLINE getServerInfo #-}
 
--- | Create a get request.  The bucket and key names are URL-escaped.
-get :: Bucket -> Key -> R -> Get.GetRequest
-get bucket key r = Get.GetRequest { Get.bucket = escape bucket
+-- | Create a get request.  The bucket type, bucket name and key names
+-- are URL-escaped.
+get :: Maybe BucketType -> Bucket -> Key -> R -> Get.GetRequest
+get btype bucket key r = Get.GetRequest {
+                                    Get.bucket = escape bucket
                                   , Get.key = escape key
                                   , Get.r = fromQuorum r
                                   , Get.pr = Nothing
@@ -111,7 +113,7 @@ get bucket key r = Get.GetRequest { Get.bucket = escape bucket
                                   , Get.timeout = Nothing
                                   , Get.sloppy_quorum = Nothing
                                   , Get.n_val = Nothing
-                                  , Get.type' = Nothing
+                                  , Get.type' = btype
                                   }
 {-# INLINE get #-}
 
@@ -153,15 +155,29 @@ getByIndex bucket q =
                          , Index.pagination_sort = Nothing
                          }
 
--- | Create a put request.  The bucket and key names are URL-escaped.
--- Any 'Link' values inside the 'Content' are assumed to have been
--- constructed with the 'link' function, and hence /not/ escaped.
-put :: Bucket -> Key -> Maybe VClock -> Content -> W -> DW -> Bool
+-- | Create a put request.  The bucket type, bucket name and key names
+-- are URL-escaped.  Any 'Link' values inside the 'Content' are
+-- assumed to have been constructed with the 'link' function, and
+-- hence /not/ escaped.
+put :: Maybe BucketType -> Bucket -> Key -> Maybe VClock -> Content -> W -> DW -> Bool
     -> Put.PutRequest
-put bucket key mvclock cont mw mdw returnBody =
-    Put.PutRequest (escape bucket) (Just $ escape key) (fromVClock <$> mvclock)
-                   cont (fromQuorum mw) (fromQuorum mdw) (Just returnBody)
-                   Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+put btype bucket key mvclock cont mw mdw returnBody =
+    Put.PutRequest { Put.bucket = escape bucket,
+                     Put.key = Just $ escape key,
+                     Put.vclock = fromVClock <$> mvclock,
+                     Put.content = cont,
+                     Put.w = fromQuorum mw,
+                     Put.dw = fromQuorum mdw,
+                     Put.return_body = Just returnBody,
+                     Put.pw = Nothing,
+                     Put.if_not_modified = Nothing,
+                     Put.if_none_match = Nothing,
+                     Put.return_head = Nothing,
+                     Put.timeout = Nothing,
+                     Put.asis = Nothing,
+                     Put.sloppy_quorum = Nothing,
+                     Put.n_val = Nothing,
+                     Put.type' = btype }
 {-# INLINE put #-}
 
 -- | Create a link.  The bucket and key names are URL-escaped.
@@ -169,11 +185,24 @@ link :: Bucket -> Key -> Tag -> Link.Link
 link bucket key = Link.Link (Just (escape bucket)) (Just (escape key)) . Just
 {-# INLINE link #-}
 
--- | Create a delete request.  The bucket and key names are URL-escaped.
-delete :: Bucket -> Key -> RW -> Del.DeleteRequest
-delete bucket key rw = Del.DeleteRequest (escape bucket) (escape key)
-                                         (fromQuorum rw) Nothing Nothing Nothing
-                                         Nothing Nothing Nothing Nothing Nothing Nothing Nothing
+-- | Create a delete request.  The bucket type, bucket name and key
+-- names are URL-escaped.
+delete :: Maybe BucketType -> Bucket -> Key -> RW -> Del.DeleteRequest
+delete btype bucket key rw = Del.DeleteRequest {
+                               Del.bucket = escape bucket,
+                               Del.key = escape key,
+                               Del.rw = fromQuorum rw,
+                               Del.vclock = Nothing,
+                               Del.r = Nothing,
+                               Del.w = Nothing,
+                               Del.pr = Nothing,
+                               Del.pw = Nothing,
+                               Del.dw = Nothing,
+                               Del.timeout = Nothing,
+                               Del.sloppy_quorum = Nothing,
+                               Del.n_val = Nothing,
+                               Del.type' = btype
+                             }
 {-# INLINE delete #-}
 
 -- | Create a list-buckets request.
