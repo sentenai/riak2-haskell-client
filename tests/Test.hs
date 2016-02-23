@@ -160,7 +160,7 @@ search = testCase "basic searchRaw" $ do
            c <- query conn ("set:*")
            assertBool "searches *" $ not (null c)
     where
-      query conn q = S.searchRaw conn q "set-ix"
+      query conn q = S.searchRaw conn q "set-ix" Nothing Nothing
       (btype,buck,key) = ("sets","xxx","yyy")
       kw = "haskell"
       delay = threadDelay (1*5000*1000) -- http://docs.basho.com/riak/2.1.3/dev/using/search/#Indexing-Values

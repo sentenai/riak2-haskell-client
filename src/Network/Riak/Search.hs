@@ -14,6 +14,7 @@ import Network.Riak.Types.Internal
 import qualified Network.Riak.Request as Req
 import qualified Network.Riak.Response as Resp
 import Control.Applicative
+import Data.Word
 
 -- | Get an index info for @Just index@, or get all indexes for
 -- @Nothing@.
@@ -23,6 +24,7 @@ getIndex conn ix = Resp.getIndex <$> exchange conn (Req.getIndex ix)
 
 -- | Search by raw 'SearchQuery' request (a bytestring) using an
 -- index.
-searchRaw :: Connection -> SearchQuery -> Index -> IO [SearchResult]
-searchRaw conn q ix = Resp.search <$> exchange conn (Req.search q ix)
+searchRaw :: Connection -> SearchQuery -> Index
+          -> Maybe Word32 -> Maybe Word32 -> IO [SearchResult]
+searchRaw conn q ix from n = Resp.search <$> exchange conn (Req.search q ix from n)
 
