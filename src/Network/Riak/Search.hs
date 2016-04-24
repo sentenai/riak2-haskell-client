@@ -20,6 +20,14 @@ import Control.Applicative
 getIndex :: Connection -> Maybe Index -> IO [IndexInfo]
 getIndex conn ix = Resp.getIndex <$> exchange conn (Req.getIndex ix)
 
+-- | Create an index
+createIndex :: Connection -> IndexInfo -> IO ()
+createIndex conn ix = exchange_ conn (Req.putIndex ix)
+
+-- | Delete an index
+deleteIndex :: Connection -> Index -> IO ()
+deleteIndex conn ix = exchange_ conn (Req.deleteIndex ix)
+
 
 -- | Search by raw 'SearchQuery' request (a bytestring) using an
 -- index.

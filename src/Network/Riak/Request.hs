@@ -47,6 +47,8 @@ module Network.Riak.Request
     , mapReduce
     , search
     , getIndex
+    , putIndex
+    , deleteIndex
     ) where
 
 #if __GLASGOW_HASKELL__ < 710
@@ -75,6 +77,9 @@ import qualified Network.Riak.Protocol.SetBucketRequest as SetBucket
 import qualified Network.Riak.Protocol.GetBucketTypeRequest as GetBucketType
 import qualified Network.Riak.Protocol.SearchQueryRequest as SearchQueryRequest
 import qualified Network.Riak.Protocol.YzIndexGetRequest as YzIndex
+import qualified Network.Riak.Protocol.YzIndexPutRequest as YzIndex
+import qualified Network.Riak.Protocol.YzIndexPutRequest as YzIndex
+import qualified Network.Riak.Protocol.YzIndexDeleteRequest as YzIndex
 
 -- | Create a ping request.
 ping :: PingRequest
@@ -251,6 +256,10 @@ search q ix = SearchQueryRequest.SearchQueryRequest {
 getIndex :: Maybe Index -> YzIndex.YzIndexGetRequest
 getIndex = YzIndex.YzIndexGetRequest
 
+putIndex :: IndexInfo -> YzIndex.YzIndexPutRequest
+putIndex ix = YzIndex.YzIndexPutRequest ix Nothing
 
+deleteIndex :: Index -> YzIndex.YzIndexDeleteRequest
+deleteIndex = YzIndex.YzIndexDeleteRequest
 
 
