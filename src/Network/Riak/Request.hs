@@ -56,6 +56,7 @@ import Control.Applicative ((<$>))
 #endif
 import qualified Data.ByteString.Char8 as B8
 import Data.Monoid
+import Data.Word
 import Network.Riak.Protocol.BucketProps (BucketProps)
 import Network.Riak.Protocol.Content
 import Network.Riak.Protocol.GetClientIDRequest
@@ -239,12 +240,13 @@ mapReduce (JSON bs)   = MapReduceRequest bs "application/json"
 mapReduce (Erlang bs) = MapReduceRequest bs "application/x-erlang-binary"
 
 -- | Create a search request
-search :: SearchQuery -> Index -> SearchQueryRequest.SearchQueryRequest
-search q ix = SearchQueryRequest.SearchQueryRequest {
+search :: SearchQuery -> Index -> Maybe Word32 -> Maybe Word32
+       -> SearchQueryRequest.SearchQueryRequest
+search q ix from n = SearchQueryRequest.SearchQueryRequest {
                 SearchQueryRequest.q = q,
                 SearchQueryRequest.index = escape ix,
-                SearchQueryRequest.rows = Nothing,
-                SearchQueryRequest.start = Nothing,
+                SearchQueryRequest.rows = n,
+                SearchQueryRequest.start = from,
                 SearchQueryRequest.sort = Nothing,
                 SearchQueryRequest.filter = Nothing,
                 SearchQueryRequest.df = Nothing,
