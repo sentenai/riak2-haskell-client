@@ -33,7 +33,7 @@ module Network.Riak.Types.Internal
     , Tag
     , SearchQuery
     , SearchResult(..)
-    , IndexInfo
+    , IndexInfo, YzIndex.YzIndex(..)
     , VClock(..)
     , Job(..)
     -- * Quorum management
@@ -225,6 +225,8 @@ data MessageTag = ErrorResponse
                 | SearchQueryResponse
                 | YokozunaIndexGetRequest
                 | YokozunaIndexGetResponse
+                | YokozunaIndexPutRequest
+                | YokozunaIndexDeleteRequest
                   deriving (Eq, Show, Generic)
 
 instance Hashable MessageTag

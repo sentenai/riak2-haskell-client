@@ -36,6 +36,9 @@ module Network.Riak.Types
     , Exchange
     , MessageTag(..)
     , Tagged(..)
+    , Index
+    , IndexInfo
+    , YzIndex
     , IndexValue(..)
     , IndexQuery(..)
     , SearchResult(..)
