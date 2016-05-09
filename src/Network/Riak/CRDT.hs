@@ -11,7 +11,7 @@ CRDT operations
     
     * ADT for operations: 'CounterOp', 'SetOp' etc
     
-    * 'modify' to locally modify a value (matching riak behaviour)
+    * 'modify' to locally modify a value (matching riak-side behaviour)
 
 * Riak-side
 
