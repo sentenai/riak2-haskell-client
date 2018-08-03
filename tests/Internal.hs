@@ -6,9 +6,6 @@
 
 module Internal where
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative
-#endif
 import Data.Aeson (FromJSON(parseJSON), genericParseJSON)
 import Data.Aeson.Types (defaultOptions, fieldLabelModifier)
 import Data.Char (toLower)

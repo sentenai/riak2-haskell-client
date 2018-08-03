@@ -52,9 +52,6 @@ module Network.Riak.Request
     , deleteIndex
     ) where
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative ((<$>))
-#endif
 import qualified Data.ByteString.Char8 as B8
 import Data.Monoid
 import Network.Riak.Protocol.BucketProps (BucketProps)

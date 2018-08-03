@@ -28,12 +28,6 @@ module Network.Riak.Response
     , getIndex
     ) where
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative ((<$>))
-import Data.Semigroup
-import Control.Arrow ((&&&))
-import Control.Monad (join)
-#endif
 import Network.Riak.Escape (unescape)
 import Network.Riak.Protocol.BucketProps (BucketProps)
 import Network.Riak.Protocol.Content
