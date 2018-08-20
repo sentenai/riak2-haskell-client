@@ -24,16 +24,10 @@ module Network.Riak.Escape
 
 import Blaze.ByteString.Builder (Builder, fromByteString, toByteString, toLazyByteString)
 import Blaze.ByteString.Builder.Word (fromWord8)
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative ((<$>))
-#endif
 import Data.Attoparsec.ByteString as A
 import Data.Attoparsec.Lazy as AL
 import Data.Bits ((.|.), (.&.), shiftL, shiftR)
 import Data.ByteString (ByteString)
-#if __GLASGOW_HASKELL__ < 710
-import Data.Monoid (mappend, mempty)
-#endif
 import Data.Text (Text)
 import Data.Word (Word8)
 import Data.Bifunctor (second, first)

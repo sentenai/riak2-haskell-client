@@ -28,21 +28,16 @@ module Network.Riak.JSON
     , putMany_
     ) where
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative ((<$>))
-#endif
 import Control.Arrow (first)
 import Data.Aeson.Types (FromJSON(..), ToJSON(..))
-#if __GLASGOW_HASKELL__ < 710
-import Data.Monoid (Monoid)
-#endif
+import Data.Semigroup
 import Data.Typeable (Typeable)
 import Network.Riak.Types.Internal
 import qualified Network.Riak.Value as V
 
 newtype JSON a = J {
       plain :: a -- ^ Unwrap a 'JSON'-wrapped value.
-    } deriving (Eq, Ord, Show, Read, Bounded, Typeable, Monoid)
+    } deriving (Eq, Ord, Show, Read, Bounded, Typeable, Semigroup, Monoid)
 
 -- | Wrap up a value so that it will be encoded and decoded as JSON
 -- when converted to/from 'Content'.

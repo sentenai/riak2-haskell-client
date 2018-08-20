@@ -29,9 +29,6 @@ module Network.Riak.Resolvable.Internal
     , putMany_
     ) where
 
-#if __GLASGOW_HASKELL__ < 710
-import Control.Applicative ((<$>))
-#endif
 import Control.Arrow (first)
 import Control.Exception (Exception, throwIO)
 import Control.Monad (unless)
@@ -42,9 +39,7 @@ import Data.Either (partitionEithers)
 import Data.Function (on)
 import Data.List (foldl', sortBy)
 import Data.Maybe (isJust)
-#if __GLASGOW_HASKELL__ < 710
-import Data.Monoid (Monoid(mappend))
-#endif
+import Data.Semigroup
 import Data.Typeable (Typeable)
 import Network.Riak.Debug (debugValues)
 import Network.Riak.Types.Internal hiding (MessageTag(..))
@@ -86,7 +81,7 @@ class (Show a) => Resolvable a where
 -- | A newtype wrapper that uses the 'mappend' method of a type's
 -- 'Monoid' instance to perform vector clock conflict resolution.
 newtype ResolvableMonoid a = RM { unRM :: a }
-    deriving (Eq, Ord, Read, Show, Typeable, Data, Monoid, FromJSON, ToJSON)
+    deriving (Eq, Ord, Read, Show, Typeable, Data, Semigroup, Monoid, FromJSON, ToJSON)
 
 instance (Show a, Monoid a) => Resolvable (ResolvableMonoid a) where
     resolve = mappend

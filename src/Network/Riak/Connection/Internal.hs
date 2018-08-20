@@ -39,10 +39,9 @@ module Network.Riak.Connection.Internal
     , recvResponse_
     ) where
 
-import Control.Concurrent (forkIO)
 import Control.Concurrent.Async (async, waitBoth)
 import Control.Concurrent.STM
-import Control.Exception (Exception, IOException, SomeException, catch, mask, throwIO, bracketOnError)
+import Control.Exception (Exception, IOException, SomeException, throwIO, bracketOnError)
 import Control.Monad (join, forM_, replicateM, when)
 import Control.Monad.IO.Unlift
 import Control.Monad.Trans.Class (lift)
