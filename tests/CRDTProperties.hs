@@ -190,6 +190,7 @@ instance Arbitrary C.Map where
 -- Yields a value on 'Get', modifies state on 'Update'.
 machine :: (MonadWriter [Maybe C.DataType] m,
             MonadState s m,
+            MonadFail m,
             Applicative m,
             Action t op)
         => Proxy t -> [Op t op]
@@ -215,6 +216,7 @@ machine p (a@Update{} : as) onAct = do
 -- State is 'B.Connection', get/update are IO-requests to riak.
 riak :: (MonadWriter [Maybe C.DataType] m,
          MonadState B.Connection m,
+         MonadFail m,
          Applicative m, MonadIO m,
          Action t op)
       => Proxy t -> [Op t op] -> m ()
@@ -233,6 +235,7 @@ riak p ops = machine p ops onAct
 -- State is 'RiakState', get/update try to match riak's behaviour.
 pure_ :: (MonadWriter [Maybe C.DataType] m,
           MonadState RiakState m,
+          MonadFail m,
           Applicative m,
           Action t op)
       => Proxy t -> [Op t op] -> m ()

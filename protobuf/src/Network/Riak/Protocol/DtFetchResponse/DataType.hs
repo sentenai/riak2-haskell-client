@@ -62,6 +62,7 @@ instance P'.ReflectEnum DataType where
       (P'.makePNF (P'.pack ".Protocol.DtFetchResponse.DataType") ["Network", "Riak"] ["Protocol", "DtFetchResponse"] "DataType")
       ["Network", "Riak", "Protocol", "DtFetchResponse", "DataType.hs"]
       [(1, "COUNTER"), (2, "SET"), (3, "MAP")]
+      Prelude'.False
 
 instance P'.TextType DataType where
   tellT = P'.tellShow

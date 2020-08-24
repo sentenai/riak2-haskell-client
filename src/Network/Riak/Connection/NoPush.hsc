@@ -21,7 +21,7 @@ import Foreign.C.Types (CInt(..))
 import Foreign.Marshal.Utils (with)
 import Foreign.Ptr (Ptr)
 import Foreign.Storable (sizeOf)
-import Network.Socket (Socket, fdSocket)
+import Network.Socket (Socket, withFdSocket)
 
 noPush :: CInt
 #if defined(TCP_NOPUSH)
@@ -41,7 +41,8 @@ setNoPush sock onOff = do
   let v = if onOff then 1 else 0
   with v $ \ptr ->
     throwErrnoIfMinus1_ "setNoPush" $
-      c_setsockopt (fdSocket sock) (#const IPPROTO_TCP) noPush ptr (fromIntegral (sizeOf v))
+      withFdSocket sock $ \fd ->
+        c_setsockopt fd (#const IPPROTO_TCP) noPush ptr (fromIntegral (sizeOf v))
 
 foreign import ccall unsafe "setsockopt"
   c_setsockopt :: CInt -> CInt -> CInt -> Ptr CInt -> CInt -> IO CInt

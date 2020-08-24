@@ -73,6 +73,7 @@ instance P'.ReflectEnum MapFieldType where
       (P'.makePNF (P'.pack ".Protocol.MapField.MapFieldType") ["Network", "Riak"] ["Protocol", "MapField"] "MapFieldType")
       ["Network", "Riak", "Protocol", "MapField", "MapFieldType.hs"]
       [(1, "COUNTER"), (2, "SET"), (3, "REGISTER"), (4, "FLAG"), (5, "MAP")]
+      Prelude'.False
 
 instance P'.TextType MapFieldType where
   tellT = P'.tellShow

@@ -1,8 +1,8 @@
-resolver: lts-12.4
+resolver: lts-16.10
 packages:
 - '.'
 - protobuf/
 - protobuf-lens/
 extra-deps:
-- unliftio-0.2.7.0
-- unliftio-core-0.1.1.0
+- protocol-buffers-2.4.13
+- protocol-buffers-descriptor-2.4.13

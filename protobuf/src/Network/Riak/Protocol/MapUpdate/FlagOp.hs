@@ -56,6 +56,7 @@ instance P'.ReflectEnum FlagOp where
    = P'.EnumInfo (P'.makePNF (P'.pack ".Protocol.MapUpdate.FlagOp") ["Network", "Riak"] ["Protocol", "MapUpdate"] "FlagOp")
       ["Network", "Riak", "Protocol", "MapUpdate", "FlagOp.hs"]
       [(1, "ENABLE"), (2, "DISABLE")]
+      Prelude'.False
 
 instance P'.TextType FlagOp where
   tellT = P'.tellShow

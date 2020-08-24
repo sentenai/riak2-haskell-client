@@ -60,6 +60,7 @@ instance P'.ReflectEnum IndexQueryType where
         "IndexQueryType")
       ["Network", "Riak", "Protocol", "IndexRequest", "IndexQueryType.hs"]
       [(0, "Eq"), (1, "Range")]
+      Prelude'.False
 
 instance P'.TextType IndexQueryType where
   tellT = P'.tellShow
