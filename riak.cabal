@@ -101,7 +101,7 @@ library
                   Network.Riak.Tag
 
   build-depends:
-                aeson                         >= 0.8      && < 1.5,
+                aeson                         >= 0.8      && < 1.6,
                 async                         >= 2.0.0.0  && < 2.3,
                 attoparsec                    >= 0.12.1.6 && < 0.14,
                 base                          >= 3        && < 5,

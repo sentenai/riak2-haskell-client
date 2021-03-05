@@ -1,8 +1,8 @@
-resolver: lts-16.10
+resolver: lts-16.31
 packages:
 - '.'
 - protobuf/
 - protobuf-lens/
 extra-deps:
-- protocol-buffers-2.4.13
-- protocol-buffers-descriptor-2.4.13
+  - protocol-buffers-2.4.17
+  - protocol-buffers-descriptor-2.4.17
