@@ -91,6 +91,7 @@ library
                   Network.Riak.Functions
                   Network.Riak.JSON
                   Network.Riak.JSON.Resolvable
+                  Network.Riak.Lens
                   Network.Riak.Request
                   Network.Riak.Resolvable
                   Network.Riak.Response
@@ -102,7 +103,6 @@ library
 
   other-modules:
                   Network.Riak.Connection.NoPush
-                  Network.Riak.Lens
                   Network.Riak.Resolvable.Internal
                   Network.Riak.Tag
 
